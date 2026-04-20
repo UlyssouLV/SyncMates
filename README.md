@@ -14,6 +14,7 @@ Un utilisateur (host) crée un "Syncer" (nom technique temporaire, renommable pl
 Le Syncer est stocké pendant une durée limitée (48h en V1).  
 Le host ajoute des participants par leur prénom/nom, puis partage un lien.  
 Les participants sélectionnent leur profil et saisissent leurs dates d'indisponibilité.  
+L'accès participant se fait via le lien de partage (pas via l'accueil).  
 L'application affiche ensuite une vue synthétique :
 
 - indisponibilités de tous
@@ -83,7 +84,7 @@ SyncMates/
     participant.html
     result.html
     js/
-      api.js
+      maintenance.js
       host.js
       syncer.js
       participant.js
@@ -94,6 +95,7 @@ SyncMates/
     routes/
       syncers.php
     services/
+      maintenanceService.php
       syncersService.php
     storage/
       jsonStore.php
@@ -107,6 +109,12 @@ SyncMates/
       sync_def456.json
     sessions/
       hs_xxx.json
+    maintenance/
+      cleanup-meta.json
+      cleanup.lock
+  scripts/
+    cleanupExpiredSessions.php
+    cleanupExpiredSyncers.php
   .htaccess
 ```
 
@@ -166,6 +174,7 @@ La sécurité est incluse dès la V1 (pas reportée).
 - `PATCH /api/syncers/{id}/participants/{participantId}/unavailabilities` : enregistrer les indisponibilités d'un participant
 - `PATCH /api/syncers/{id}/event-period` : configurer la plage de l'évènement
 - `GET /api/syncers/{id}/results` : récupérer les résultats agrégés de disponibilité
+- `POST /api/maintenance/cleanup-if-needed` : déclencher le nettoyage opportuniste (delta 10 min)
 
 ---
 
@@ -207,6 +216,10 @@ La sécurité est incluse dès la V1 (pas reportée).
 - Cookie host `HttpOnly` + `SameSite=Lax` + `Secure` (si HTTPS) posé au login
 - Endpoints host protégés par session (`GET /api/syncers/{id}`, `POST/DELETE participants`, `PATCH event-period`)
 - Redirection automatique vers `host.html` depuis `syncer.html` sur erreur `401` (session expirée/invalide)
+- Mécanisme de maintenance opportuniste ajouté (`maintenance.js` + endpoint backend)
+- Nettoyage sessions expirées implémenté (`scripts/cleanupExpiredSessions.php`)
+- Nettoyage Syncers expirés implémenté (`scripts/cleanupExpiredSyncers.php`)
+- Métadonnées de maintenance persistées dans `data/maintenance/cleanup-meta.json`
 
 ---
 
@@ -222,6 +235,6 @@ La sécurité est incluse dès la V1 (pas reportée).
 - [x] Protéger les endpoints host par vérification de session
 - [x] Implémenter calcul "meilleures dates"
 - [x] Finaliser les pages HTML de base (sans style avancé)
-- [ ] Gérer expiration 48h
+- [x] Gérer expiration 48h
 
 ---

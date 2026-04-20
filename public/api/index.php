@@ -23,6 +23,7 @@ $normalizedPath = rtrim($path, '/');
 
 $isCreateSyncerRoute = $normalizedPath === '/api/syncers';
 $isLoginSyncerRoute = $normalizedPath === '/api/syncers/login';
+$isCleanupIfNeededRoute = $normalizedPath === '/api/maintenance/cleanup-if-needed';
 $getSyncerMatches = [];
 $isGetSyncerRoute = preg_match('#^/api/syncers/([^/]+)$#', $normalizedPath, $getSyncerMatches) === 1;
 $addParticipantMatches = [];
@@ -45,6 +46,12 @@ if ($isCreateSyncerRoute && $method === 'POST') {
 // Route: connexion à un Syncer.
 if ($isLoginSyncerRoute && $method === 'POST') {
     handleLoginSyncer();
+    exit;
+}
+
+// Route: maintenance opportuniste (nettoyage périodique).
+if ($isCleanupIfNeededRoute && $method === 'POST') {
+    handleCleanupIfNeeded();
     exit;
 }
 

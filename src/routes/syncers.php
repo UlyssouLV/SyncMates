@@ -381,6 +381,60 @@ function handleGetSyncerResults(string $syncerId): void
 }
 
 /**
+ * Traite POST /api/maintenance/cleanup-if-needed.
+ *
+ * Déclenche les scripts de nettoyage uniquement si le delta minimal
+ * depuis le dernier nettoyage est dépassé.
+ */
+function handleCleanupIfNeeded(): void
+{
+    try {
+        require_once __DIR__ . '/../services/maintenanceService.php';
+        $result = runCleanupIfNeeded(600);
+        jsonResponse(200, [
+            'message' => 'Maintenance vérifiée.',
+            'cleanup' => $result,
+        ]);
+    } catch (Throwable $exception) {
+        appendLocalPhpErrorLog('maintenance-cleanup-error.txt', $exception, [
+            'route' => '/api/maintenance/cleanup-if-needed',
+            'method' => (string) ($_SERVER['REQUEST_METHOD'] ?? ''),
+            'uri' => (string) ($_SERVER['REQUEST_URI'] ?? ''),
+        ]);
+        jsonResponse(500, [
+            'error' => 'Erreur serveur lors du nettoyage de maintenance.',
+        ]);
+    }
+}
+
+/**
+ * Écrit un log d'erreur PHP dans le même dossier que ce fichier.
+ *
+ * @param string    $filename  Nom du fichier log.
+ * @param Throwable $exception Exception capturée.
+ * @param array     $context   Contexte optionnel de la requête.
+ */
+function appendLocalPhpErrorLog(string $filename, Throwable $exception, array $context = []): void
+{
+    $path = __DIR__ . '/' . $filename;
+    $now = gmdate('c');
+    $contextJson = json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if (!is_string($contextJson)) {
+        $contextJson = '{}';
+    }
+
+    $content = "[{$now}] " . get_class($exception) . PHP_EOL
+        . 'message: ' . $exception->getMessage() . PHP_EOL
+        . 'file: ' . $exception->getFile() . ':' . $exception->getLine() . PHP_EOL
+        . 'context: ' . $contextJson . PHP_EOL
+        . 'trace: ' . $exception->getTraceAsString() . PHP_EOL
+        . str_repeat('-', 80) . PHP_EOL;
+
+    // Log best effort: ne jamais casser la route si l'écriture échoue.
+    @file_put_contents($path, $content, FILE_APPEND | LOCK_EX);
+}
+
+/**
  * Valide et parse un body JSON HTTP.
  *
  * @return array|null Tableau associatif du body JSON, sinon null si erreur.
