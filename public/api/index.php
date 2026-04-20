@@ -22,10 +22,17 @@ $path = parse_url($requestUri, PHP_URL_PATH) ?? '/';
 $normalizedPath = rtrim($path, '/');
 
 $isCreateSyncerRoute = $normalizedPath === '/api/syncers';
+$isLoginSyncerRoute = $normalizedPath === '/api/syncers/login';
 
 // Route: création d'un Syncer.
 if ($isCreateSyncerRoute && $method === 'POST') {
     handleCreateSyncer();
+    exit;
+}
+
+// Route: connexion à un Syncer.
+if ($isLoginSyncerRoute && $method === 'POST') {
+    handleLoginSyncer();
     exit;
 }
 

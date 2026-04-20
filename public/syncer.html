@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SyncMates - Syncer</title>
+  </head>
+  <body>
+    <main>
+      <h1 id="syncer-title">Syncer</h1>
+      <p id="syncer-description">
+        Espace de gestion du Syncer connecté.
+      </p>
+
+      <section>
+        <h2>Informations</h2>
+        <p><strong>ID:</strong> <span id="syncer-id">-</span></p>
+        <p><strong>Nom:</strong> <span id="syncer-name">-</span></p>
+        <p><strong>Expire le:</strong> <span id="syncer-expires-at">-</span></p>
+      </section>
+
+      <section>
+        <h2>Participants</h2>
+        <ul id="participants-list">
+          <li>Aucun participant pour le moment.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Actions</h2>
+        <button type="button" id="add-participant-button" disabled>
+          Ajouter un participant (bientot)
+        </button>
+        <button type="button" id="share-link-button" disabled>
+          Copier le lien de partage (bientot)
+        </button>
+      </section>
+
+      <p><a href="host.html">Retour a la connexion Syncer</a></p>
+    </main>
+
+    <script src="js/syncer.js" defer></script>
+  </body>
+</html>

@@ -129,3 +129,82 @@ function findSyncerByNameAndPassword(string $name, string $password): ?array
     return null;
 }
 
+/**
+ * Lit un fichier Syncer JSON et retourne son contenu décodé.
+ *
+ * @param string $path Chemin absolu vers un fichier Syncer.
+ *
+ * @return array|null Syncer décodé, sinon null si invalide.
+ */
+function readSyncerFromPath(string $path): ?array
+{
+    $raw = file_get_contents($path);
+    if (!is_string($raw) || $raw === '') {
+        return null;
+    }
+
+    $syncer = json_decode($raw, true);
+    if (!is_array($syncer)) {
+        return null;
+    }
+
+    return $syncer;
+}
+
+/**
+ * Recherche un Syncer pour la connexion host.
+ *
+ * Le champ identifiant accepte:
+ * - l'ID technique du Syncer (ex: sync_abcd1234)
+ * - le nom du Syncer (ex: Barbec Avril)
+ *
+ * @param string $identifier ID ou nom saisi par l'utilisateur.
+ * @param string $password   Mot de passe brut saisi.
+ *
+ * @return array|null Syncer authentifié, sinon null.
+ */
+function findSyncerForLogin(string $identifier, string $password): ?array
+{
+    ensureSyncersDataDirectoryExists();
+
+    // Cas 1: tentative directe par ID technique.
+    if (str_starts_with($identifier, 'sync_')) {
+        $path = syncerFilePath($identifier);
+        if (file_exists($path)) {
+            $syncer = readSyncerFromPath($path);
+            if (is_array($syncer)) {
+                $passwordHash = isset($syncer['passwordHash']) ? (string) $syncer['passwordHash'] : '';
+                if ($passwordHash !== '' && password_verify($password, $passwordHash)) {
+                    return $syncer;
+                }
+            }
+        }
+    }
+
+    // Cas 2: recherche par nom + mot de passe.
+    $pattern = syncersDataDirectory() . '/*.json';
+    $paths = glob($pattern);
+    if (!is_array($paths)) {
+        return null;
+    }
+
+    foreach ($paths as $path) {
+        $syncer = readSyncerFromPath($path);
+        if (!is_array($syncer)) {
+            continue;
+        }
+
+        $existingName = isset($syncer['name']) ? (string) $syncer['name'] : '';
+        $existingPasswordHash = isset($syncer['passwordHash']) ? (string) $syncer['passwordHash'] : '';
+        if ($existingName === '' || $existingPasswordHash === '') {
+            continue;
+        }
+
+        if ($existingName === $identifier && password_verify($password, $existingPasswordHash)) {
+            return $syncer;
+        }
+    }
+
+    return null;
+}
+

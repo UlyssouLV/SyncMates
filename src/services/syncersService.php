@@ -78,3 +78,34 @@ function createSyncer(string $name, string $password): array
     return $syncer;
 }
 
+/**
+ * Authentifie un host sur un Syncer existant.
+ *
+ * @param string $identifier Identifiant saisi (ID technique ou nom du Syncer).
+ * @param string $password   Mot de passe brut saisi par le host.
+ *
+ * @return array Syncer authentifié, sans passwordHash.
+ *
+ * @throws InvalidArgumentException Si les entrées sont invalides.
+ * @throws DomainException          Si l'authentification échoue.
+ */
+function loginSyncer(string $identifier, string $password): array
+{
+    $trimmedIdentifier = trim($identifier);
+    if ($trimmedIdentifier === '') {
+        throw new InvalidArgumentException('Le nom ou identifiant du Syncer est requis.');
+    }
+
+    if ($password === '') {
+        throw new InvalidArgumentException('Le mot de passe est requis.');
+    }
+
+    $syncer = findSyncerForLogin($trimmedIdentifier, $password);
+    if (!is_array($syncer)) {
+        throw new DomainException('Identifiants de connexion invalides.');
+    }
+
+    unset($syncer['passwordHash']);
+    return $syncer;
+}
+

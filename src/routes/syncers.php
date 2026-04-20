@@ -21,30 +21,8 @@ require_once __DIR__ . '/../services/syncersService.php';
  */
 function handleCreateSyncer(): void
 {
-    // Vérifie que le client envoie bien du JSON.
-    $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-    if (stripos($contentType, 'application/json') === false) {
-        jsonResponse(400, [
-            'error' => 'Content-Type doit être application/json.',
-        ]);
-        return;
-    }
-
-    // Lit le corps brut de la requête HTTP.
-    $rawBody = file_get_contents('php://input');
-    if ($rawBody === false || $rawBody === '') {
-        jsonResponse(400, [
-            'error' => 'Corps de requête JSON manquant.',
-        ]);
-        return;
-    }
-
-    // Parse le JSON en tableau associatif PHP.
-    $payload = json_decode($rawBody, true);
+    $payload = parseJsonRequestBody();
     if (!is_array($payload)) {
-        jsonResponse(400, [
-            'error' => 'JSON invalide.',
-        ]);
         return;
     }
 
@@ -71,6 +49,80 @@ function handleCreateSyncer(): void
             'error' => 'Erreur serveur lors de la création du Syncer.',
         ]);
     }
+}
+
+/**
+ * Traite POST /api/syncers/login.
+ *
+ * Vérifie les identifiants host (nom/ID + mot de passe) et renvoie
+ * le Syncer correspondant en cas d'authentification valide.
+ */
+function handleLoginSyncer(): void
+{
+    $payload = parseJsonRequestBody();
+    if (!is_array($payload)) {
+        return;
+    }
+
+    $identifier = isset($payload['identifier']) ? (string) $payload['identifier'] : '';
+    $password = isset($payload['password']) ? (string) $payload['password'] : '';
+
+    try {
+        $syncer = loginSyncer($identifier, $password);
+        jsonResponse(200, [
+            'message' => 'Connexion réussie.',
+            'syncer' => $syncer,
+        ]);
+    } catch (InvalidArgumentException $exception) {
+        jsonResponse(400, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (DomainException $exception) {
+        jsonResponse(401, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (Throwable $exception) {
+        jsonResponse(500, [
+            'error' => 'Erreur serveur lors de la connexion au Syncer.',
+        ]);
+    }
+}
+
+/**
+ * Valide et parse un body JSON HTTP.
+ *
+ * @return array|null Tableau associatif du body JSON, sinon null si erreur.
+ */
+function parseJsonRequestBody(): ?array
+{
+    // Vérifie que le client envoie bien du JSON.
+    $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+    if (stripos($contentType, 'application/json') === false) {
+        jsonResponse(400, [
+            'error' => 'Content-Type doit être application/json.',
+        ]);
+        return null;
+    }
+
+    // Lit le corps brut de la requête HTTP.
+    $rawBody = file_get_contents('php://input');
+    if ($rawBody === false || $rawBody === '') {
+        jsonResponse(400, [
+            'error' => 'Corps de requête JSON manquant.',
+        ]);
+        return null;
+    }
+
+    // Parse le JSON en tableau associatif PHP.
+    $payload = json_decode($rawBody, true);
+    if (!is_array($payload)) {
+        jsonResponse(400, [
+            'error' => 'JSON invalide.',
+        ]);
+        return null;
+    }
+
+    return $payload;
 }
 
 /**

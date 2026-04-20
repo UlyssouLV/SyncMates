@@ -76,13 +76,16 @@ Pourquoi JSON en V1 :
 SyncMates/
   README.md
   public/
+    .htaccess
     index.html
     host.html
+    syncer.html
     participant.html
     result.html
     js/
       api.js
       host.js
+      syncer.js
       participant.js
       result.js
     api/
@@ -159,6 +162,8 @@ La sécurité est incluse dès la V1 (pas reportée).
 - Validation de création en place (champs requis + JSON + Content-Type)
 - Règle anti-doublon implémentée sur l'association `name + password`
 - Formulaire "Créer un Syncer" branché côté frontend (`public/host.html` -> `public/js/host.js`)
+- Route API de connexion Syncer implémentée : `POST /api/syncers/login`
+- Formulaire "Connexion Syncer" branché côté frontend avec redirection vers `syncer.html`
 - Routage Apache API en place via `public/.htaccess`
 
 ---
@@ -169,7 +174,7 @@ La sécurité est incluse dès la V1 (pas reportée).
 - [x] Créer l'architecture dossiers `public`, `src`, `data`
 - [x] Implémenter le stockage JSON robuste (1 fichier par Syncer + lecture/écriture atomique)
 - [ ] Compléter les endpoints Syncer + participants
-- [ ] Implémenter auth host (mot de passe hashé + login + logout)
+- [ ] Finaliser auth host (session serveur sécurisée + logout)
 - [ ] Implémenter sessions serveur + cookie `HttpOnly`/`Secure`/`SameSite`
 - [ ] Protéger les endpoints host par vérification de session
 - [ ] Créer saisie d'indisponibilités côté participant
