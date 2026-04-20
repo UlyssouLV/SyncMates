@@ -6,6 +6,10 @@
     <title>SyncMates - Participant</title>
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="css/pages/participant.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css"
+    />
   </head>
   <body class="page-participant">
     <main>
@@ -24,23 +28,24 @@
       <section>
         <h2>Ton profil</h2>
         <form id="participant-selection-form" method="post" action="#">
-          <div>
-            <label for="participant-select">Choisir mon profil</label>
+          <div id="participant-select-controls">
+            <label id="participant-select-label" for="participant-select">Choisir mon profil</label>
             <select id="participant-select" name="participantId" required>
               <option value="">-- Choisir --</option>
             </select>
+            <button type="submit" id="validate-profile-button">Valider mon profil</button>
           </div>
-          <button type="submit">Valider mon profil</button>
+          <button type="button" id="change-profile-button" hidden>Changer de profil</button>
         </form>
         <p id="participant-selection-feedback" aria-live="polite"></p>
       </section>
 
-      <section>
+      <section id="participant-unavailabilities-section" hidden>
         <h2>Mes indisponibilités</h2>
         <form id="participant-unavailabilities-form" method="post" action="#">
           <p>
-            Sélectionne les jours où tu n'es pas disponible dans la plage définie
-            par le host.
+            Clique sur les jours du calendrier pour basculer entre disponible
+            (vert) et indisponible (rouge) dans la plage définie par le host.
           </p>
 
           <div id="unavailability-picker">
@@ -58,17 +63,10 @@
         <p id="participant-unavailabilities-feedback" aria-live="polite"></p>
       </section>
 
-      <section>
-        <h2>Récapitulatif</h2>
-        <p><strong>Profil sélectionné:</strong> <span id="selected-participant-name">-</span></p>
-        <ul id="unavailable-dates-preview">
-          <li>Aucune indisponibilité enregistrée pour le moment.</li>
-        </ul>
-      </section>
-
       <p><a href="index.html">Retour à l'accueil</a></p>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js" defer></script>
     <script src="js/maintenance.js" defer></script>
     <script src="js/participant.js" defer></script>
   </body>

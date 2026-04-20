@@ -2,6 +2,65 @@
   max-width: 360px;
 }
 
+.page-participant #unavailability-picker {
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.page-participant #participant-calendar {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  touch-action: manipulation;
+}
+
+.page-participant .fc .fc-toolbar.fc-header-toolbar {
+  margin-bottom: 0.6rem;
+}
+
+.page-participant .fc .fc-toolbar-title {
+  font-size: 1.1rem;
+}
+
+.page-participant .fc .fc-button {
+  background: var(--primary);
+  border-color: var(--primary);
+  font-size: 0.86rem;
+}
+
+.page-participant .fc .fc-button:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.page-participant .fc .fc-button-primary:not(:disabled).fc-button-active,
+.page-participant .fc .fc-button-primary:not(:disabled):active {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.page-participant .fc .fc-daygrid-day.fc-day-available .fc-daygrid-day-frame {
+  background: #e8f7ee;
+}
+
+.page-participant .fc .fc-daygrid-day.fc-day-unavailable .fc-daygrid-day-frame {
+  background: #fde8e8;
+}
+
+.page-participant .fc .fc-daygrid-day.fc-day-out-of-range .fc-daygrid-day-frame {
+  background: #f2f4f8;
+  opacity: 0.7;
+}
+
+.page-participant .fc .fc-daygrid-day-number {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .page-participant #unavailable-dates-preview {
   background: #fff;
   border: 1px solid var(--border);
@@ -15,4 +74,24 @@
 
 .page-participant #clear-unavailabilities-button:hover {
   background: #3f475c;
+}
+
+@media (max-width: 780px) {
+  .page-participant #participant-calendar {
+    padding: 6px;
+  }
+
+  .page-participant .fc .fc-toolbar {
+    display: grid;
+    gap: 8px;
+  }
+
+  .page-participant .fc .fc-toolbar-chunk {
+    display: flex;
+    justify-content: center;
+  }
+
+  .page-participant .fc {
+    height: 560px !important;
+  }
 }

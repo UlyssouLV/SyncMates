@@ -91,6 +91,11 @@ function setUnavailabilitiesFeedback(message, isError) {
   feedbackElement.style.color = isError ? "crimson" : "green";
 }
 
+let unavailableDatesSet = new Set();
+let currentEventStartDate = "";
+let currentEventEndDate = "";
+let participantCalendar = null;
+
 /**
  * Appelle l'API pour récupérer les profils participants d'un Syncer.
  *
@@ -235,30 +240,86 @@ function renderUnavailabilityPicker(eventStartDate, eventEndDate) {
   }
 
   const dates = buildDateRange(eventStartDate, eventEndDate);
+  currentEventStartDate = String(eventStartDate || "");
+  currentEventEndDate = String(eventEndDate || "");
+  unavailableDatesSet = new Set();
+
   if (dates.length === 0) {
     pickerElement.innerHTML =
       "<p>Plage non configurée. Le host doit définir une date de début et de fin.</p>";
     return;
   }
 
-  pickerElement.innerHTML = "";
-  const list = document.createElement("div");
-
-  for (const isoDate of dates) {
-    const item = document.createElement("label");
-    item.style.display = "block";
-
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.name = "unavailableDate";
-    checkbox.value = isoDate;
-
-    item.appendChild(checkbox);
-    item.append(` ${isoDate}`);
-    list.appendChild(item);
+  if (!window.FullCalendar || !window.FullCalendar.Calendar) {
+    pickerElement.innerHTML = "<p>Calendrier indisponible pour le moment.</p>";
+    return;
   }
 
-  pickerElement.appendChild(list);
+  pickerElement.innerHTML = "";
+  const calendarRoot = document.createElement("div");
+  calendarRoot.id = "participant-calendar";
+  pickerElement.appendChild(calendarRoot);
+
+  if (participantCalendar) {
+    participantCalendar.destroy();
+    participantCalendar = null;
+  }
+
+  participantCalendar = new window.FullCalendar.Calendar(calendarRoot, {
+    initialView: "dayGridMonth",
+    initialDate: currentEventStartDate,
+    locale: "fr",
+    firstDay: 1,
+    fixedWeekCount: true,
+    height: 640,
+    expandRows: true,
+    validRange: {
+      start: currentEventStartDate,
+      end: addOneDayIso(currentEventEndDate),
+    },
+    headerToolbar: {
+      left: "prev,next today",
+      center: "title",
+      right: "",
+    },
+    datesSet: () => {
+      // Re-applique les classes à chaque changement/rendu de vue mensuelle.
+      requestAnimationFrame(() => {
+        updateCalendarDayClasses();
+      });
+    },
+    dayCellClassNames: (arg) => {
+      const isoDate = formatDateLocalIso(arg.date);
+      if (!isDateWithinRange(isoDate, currentEventStartDate, currentEventEndDate)) {
+        return ["fc-day-out-of-range"];
+      }
+
+      if (unavailableDatesSet.has(isoDate)) {
+        return ["fc-day-unavailable"];
+      }
+
+      return ["fc-day-available"];
+    },
+    dateClick: (info) => {
+      const isoDate = info.dateStr;
+      if (!isDateWithinRange(isoDate, currentEventStartDate, currentEventEndDate)) {
+        return;
+      }
+
+      if (unavailableDatesSet.has(isoDate)) {
+        unavailableDatesSet.delete(isoDate);
+      } else {
+        unavailableDatesSet.add(isoDate);
+      }
+
+      updateCalendarDayClasses();
+    },
+  });
+
+  participantCalendar.render();
+  requestAnimationFrame(() => {
+    updateCalendarDayClasses();
+  });
 }
 
 /**
@@ -267,13 +328,18 @@ function renderUnavailabilityPicker(eventStartDate, eventEndDate) {
  * @param {Array<string>} unavailableDates Dates indisponibles.
  */
 function applyUnavailableDatesSelection(unavailableDates) {
-  const selectedDates = new Set(Array.isArray(unavailableDates) ? unavailableDates : []);
-  const checkboxes = document.querySelectorAll('#unavailability-picker input[type="checkbox"]');
-  for (const checkbox of checkboxes) {
-    if (checkbox instanceof HTMLInputElement) {
-      checkbox.checked = selectedDates.has(checkbox.value);
+  const nextSet = new Set();
+  if (Array.isArray(unavailableDates)) {
+    for (const date of unavailableDates) {
+      const isoDate = String(date || "");
+      if (isDateWithinRange(isoDate, currentEventStartDate, currentEventEndDate)) {
+        nextSet.add(isoDate);
+      }
     }
   }
+
+  unavailableDatesSet = nextSet;
+  updateCalendarDayClasses();
 }
 
 /**
@@ -282,38 +348,7 @@ function applyUnavailableDatesSelection(unavailableDates) {
  * @returns {Array<string>} Dates indisponibles sélectionnées.
  */
 function collectSelectedUnavailableDates() {
-  const selectedDates = [];
-  const checkboxes = document.querySelectorAll('#unavailability-picker input[type="checkbox"]');
-  for (const checkbox of checkboxes) {
-    if (checkbox instanceof HTMLInputElement && checkbox.checked) {
-      selectedDates.push(checkbox.value);
-    }
-  }
-  return selectedDates;
-}
-
-/**
- * Met à jour l'aperçu des indisponibilités.
- *
- * @param {Array<string>} unavailableDates Dates indisponibles.
- */
-function renderUnavailableDatesPreview(unavailableDates) {
-  const previewElement = document.getElementById("unavailable-dates-preview");
-  if (!previewElement) {
-    return;
-  }
-
-  previewElement.innerHTML = "";
-  if (!Array.isArray(unavailableDates) || unavailableDates.length === 0) {
-    previewElement.innerHTML = "<li>Aucune indisponibilité enregistrée pour le moment.</li>";
-    return;
-  }
-
-  for (const date of unavailableDates) {
-    const item = document.createElement("li");
-    item.textContent = String(date);
-    previewElement.appendChild(item);
-  }
+  return Array.from(unavailableDatesSet).sort();
 }
 
 /**
@@ -406,8 +441,16 @@ const syncerId = getQueryParam("syncerId");
 const participantSelectionForm = document.getElementById("participant-selection-form");
 const participantUnavailabilitiesForm = document.getElementById("participant-unavailabilities-form");
 const participantSelect = document.getElementById("participant-select");
+const participantSelectControls = document.getElementById("participant-select-controls");
+const participantSelectLabel = document.getElementById("participant-select-label");
+const validateProfileButton = document.getElementById("validate-profile-button");
+const changeProfileButton = document.getElementById("change-profile-button");
+const participantUnavailabilitiesSection = document.getElementById("participant-unavailabilities-section");
 let selectedParticipantId = "";
 
+if (participantUnavailabilitiesSection) {
+  participantUnavailabilitiesSection.hidden = true;
+}
 if (!syncerId) {
   setSelectionFeedback("Lien invalide: paramètre syncerId manquant.", true);
 } else {
@@ -444,8 +487,24 @@ if (participantSelectionForm && participantSelect instanceof HTMLSelectElement) 
     }
 
     selectedParticipantId = participantSelect.value;
-    setTextById("selected-participant-name", selectedOption.textContent || "-");
-    setSelectionFeedback("Profil sélectionné.", false);
+    setSelectionFeedback("", false);
+
+    if (participantSelectLabel) {
+      participantSelectLabel.hidden = true;
+    }
+    if (participantSelect instanceof HTMLSelectElement) {
+      participantSelect.disabled = true;
+    }
+    if (validateProfileButton) {
+      validateProfileButton.hidden = true;
+    }
+    if (changeProfileButton) {
+      changeProfileButton.hidden = false;
+    }
+    if (participantUnavailabilitiesSection) {
+      participantUnavailabilitiesSection.hidden = false;
+    }
+    refreshParticipantCalendarLayout();
 
     if (!syncerId) {
       return;
@@ -458,7 +517,6 @@ if (participantSelectionForm && participantSelect instanceof HTMLSelectElement) 
         ? result.participant.unavailableDates
         : [];
       applyUnavailableDatesSelection(unavailableDates);
-      renderUnavailableDatesPreview(unavailableDates);
       setUnavailabilitiesFeedback("Indisponibilités chargées.", false);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
@@ -467,15 +525,17 @@ if (participantSelectionForm && participantSelect instanceof HTMLSelectElement) 
   });
 }
 
+if (changeProfileButton) {
+  changeProfileButton.addEventListener("click", () => {
+    window.location.reload();
+  });
+}
+
 const clearUnavailabilitiesButton = document.getElementById("clear-unavailabilities-button");
 if (clearUnavailabilitiesButton) {
   clearUnavailabilitiesButton.addEventListener("click", () => {
-    const checkboxes = document.querySelectorAll('#unavailability-picker input[type="checkbox"]');
-    for (const checkbox of checkboxes) {
-      if (checkbox instanceof HTMLInputElement) {
-        checkbox.checked = false;
-      }
-    }
+    unavailableDatesSet = new Set();
+    updateCalendarDayClasses();
   });
 }
 
@@ -506,12 +566,122 @@ if (participantUnavailabilitiesForm) {
         ? result.participant.unavailableDates
         : [];
       applyUnavailableDatesSelection(savedUnavailableDates);
-      renderUnavailableDatesPreview(savedUnavailableDates);
       setUnavailabilitiesFeedback("Indisponibilités enregistrées.", false);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
       setUnavailabilitiesFeedback(message, true);
     }
   });
+}
+
+/**
+ * Convertit une date locale JS en format ISO (YYYY-MM-DD).
+ *
+ * @param {Date} date Date à convertir.
+ * @returns {string} Date ISO locale.
+ */
+function formatDateLocalIso(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Vérifie qu'une date ISO est dans la plage [start, end].
+ *
+ * @param {string} isoDate Date testée.
+ * @param {string} start Début de plage.
+ * @param {string} end Fin de plage.
+ * @returns {boolean} true si date valide et dans la plage.
+ */
+function isDateWithinRange(isoDate, start, end) {
+  if (!isoDate || !start || !end) {
+    return false;
+  }
+  return isoDate >= start && isoDate <= end;
+}
+
+/**
+ * Ajoute un jour à une date ISO (YYYY-MM-DD).
+ *
+ * @param {string} isoDate Date ISO d'entrée.
+ * @returns {string} Date ISO + 1 jour.
+ */
+function addOneDayIso(isoDate) {
+  const parts = String(isoDate || "").split("-");
+  if (parts.length !== 3) {
+    return isoDate;
+  }
+
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+  const day = Number(parts[2]);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+    return isoDate;
+  }
+
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + 1);
+  const nextYear = date.getUTCFullYear();
+  const nextMonth = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const nextDay = String(date.getUTCDate()).padStart(2, "0");
+  return `${nextYear}-${nextMonth}-${nextDay}`;
+}
+
+/**
+ * Force le recalcul des couleurs des jours du calendrier.
+ */
+function rerenderCalendarDayStates() {
+  if (participantCalendar && typeof participantCalendar.rerenderDates === "function") {
+    participantCalendar.rerenderDates();
+  }
+}
+
+/**
+ * Recalcule la taille du calendrier après affichage d'une section cachée.
+ *
+ * FullCalendar a besoin d'un layout visible pour mesurer correctement ses cellules.
+ */
+function refreshParticipantCalendarLayout() {
+  if (!participantCalendar || typeof participantCalendar.updateSize !== "function") {
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    participantCalendar.updateSize();
+    updateCalendarDayClasses();
+  });
+}
+
+/**
+ * Applique immédiatement les classes de disponibilité sur les cellules.
+ *
+ * Cette mise à jour directe évite d'attendre un resize/reflow du calendrier.
+ */
+function updateCalendarDayClasses() {
+  rerenderCalendarDayStates();
+
+  const dayCells = document.querySelectorAll("#participant-calendar .fc-daygrid-day[data-date]");
+  for (const cell of dayCells) {
+    if (!(cell instanceof HTMLElement)) {
+      continue;
+    }
+
+    const isoDate = String(cell.dataset.date || "");
+    cell.classList.remove("fc-day-available", "fc-day-unavailable", "fc-day-out-of-range");
+
+    if (!isDateWithinRange(isoDate, currentEventStartDate, currentEventEndDate)) {
+      cell.classList.add("fc-day-out-of-range");
+      continue;
+    }
+
+    if (unavailableDatesSet.has(isoDate)) {
+      cell.classList.add("fc-day-unavailable");
+      continue;
+    }
+
+    cell.classList.add("fc-day-available");
+  }
 }
 
