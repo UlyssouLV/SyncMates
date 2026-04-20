@@ -1,1 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SyncMates - Authentification host</title>
+  </head>
+  <body>
+    <main>
+      <h1>Connexion host</h1>
+      <p>
+        Connecte-toi à ton Syncer pour gérer les participants et consulter les
+        disponibilités.
+      </p>
 
+      <form id="host-login-form" method="post" action="#">
+        <div>
+          <label for="syncer-name">Nom ou identifiant du Syncer</label>
+          <input
+            id="syncer-name"
+            name="syncerName"
+            type="text"
+            required
+            autocomplete="off"
+          />
+        </div>
+
+        <div>
+          <label for="syncer-password">Mot de passe</label>
+          <input
+            id="syncer-password"
+            name="syncerPassword"
+            type="password"
+            required
+            minlength="8"
+            autocomplete="current-password"
+          />
+        </div>
+
+        <button type="submit">Se connecter</button>
+      </form>
+
+      <p>
+        <a href="index.html">Retour à l'accueil</a>
+      </p>
+    </main>
+  </body>
+</html>

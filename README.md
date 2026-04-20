@@ -168,7 +168,8 @@ La sécurité est incluse dès la V1 (pas reportée).
    - score de disponibilité par date
    - endpoint de résultats
 5. **Pages HTML simples**
-   - création host
+   - création Syncer
+   - connexion host
    - sélection participant
    - affichage résultat
 6. **Expiration 48h**
