@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SyncMates - Authentification host</title>
+  </head>
+  <body>
+    <main>
+      <h1>Connexion Syncer</h1>
+      <p>
+        Connecte-toi à ton Syncer pour gérer les participants et consulter les
+        disponibilités.
+      </p>
+
+      <form id="host-login-form" method="post" action="#">
+        <div>
+          <label for="syncer-name">Nom ou identifiant du Syncer</label>
+          <input
+            id="syncer-name"
+            name="syncerName"
+            type="text"
+            required
+            autocomplete="off"
+          />
+        </div>
+
+        <div>
+          <label for="syncer-password">Mot de passe</label>
+          <input
+            id="syncer-password"
+            name="syncerPassword"
+            type="password"
+            required
+          />
+        </div>
+
+        <button type="submit">Se connecter</button>
+      </form>
+      <p id="host-login-feedback" aria-live="polite"></p>
+
+      <section>
+        <h2>Créer un Syncer</h2>
+        <form id="create-syncer-form" method="post" action="#">
+          <div>
+            <label for="create-syncer-name">Nom du Syncer</label>
+            <input
+              id="create-syncer-name"
+              name="createSyncerName"
+              type="text"
+            required
+            />
+          </div>
+
+          <div>
+            <label for="create-syncer-password">Mot de passe</label>
+            <input
+              id="create-syncer-password"
+              name="createSyncerPassword"
+              type="password"
+            required
+            />
+          </div>
+
+          <button type="submit">Créer le Syncer</button>
+        </form>
+        <p id="create-syncer-feedback" aria-live="polite"></p>
+      </section>
+
+      <section>
+        <h2>Lien de partage participant</h2>
+        <button type="button" id="copy-share-link-button">
+          Copier le lien de partage
+        </button>
+        <p id="copy-share-link-feedback" aria-live="polite"></p>
+      </section>
+
+      <p>
+        <a href="index.html">Retour à l'accueil</a>
+      </p>
+    </main>
+    <script src="js/maintenance.js" defer></script>
+    <script src="js/host.js" defer></script>
+  </body>
+</html>

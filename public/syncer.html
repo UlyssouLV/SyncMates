@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SyncMates - Syncer</title>
+  </head>
+  <body>
+    <main>
+      <h1 id="syncer-title">Syncer</h1>
+      <p id="syncer-description">
+        Espace de gestion du Syncer connecté.
+      </p>
+
+      <section>
+        <h2>Informations</h2>
+        <p><strong>ID:</strong> <span id="syncer-id">-</span></p>
+        <p><strong>Nom:</strong> <span id="syncer-name">-</span></p>
+        <p><strong>Expire le:</strong> <span id="syncer-expires-at">-</span></p>
+        <p>
+          <strong>Plage de l'évènement:</strong>
+          <span id="syncer-event-period">Non configurée</span>
+        </p>
+      </section>
+
+      <section>
+        <h2>Configurer la période de l'évènement</h2>
+        <form id="event-period-form" method="post" action="#">
+          <div>
+            <label for="event-start-date">Date de début</label>
+            <input id="event-start-date" name="eventStartDate" type="date" required />
+          </div>
+          <div>
+            <label for="event-end-date">Date de fin</label>
+            <input id="event-end-date" name="eventEndDate" type="date" required />
+          </div>
+          <button type="submit">Enregistrer la période</button>
+        </form>
+        <p id="event-period-feedback" aria-live="polite"></p>
+      </section>
+
+      <section>
+        <h2>Participants</h2>
+        <ul id="participants-list">
+          <li>Aucun participant pour le moment.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Ajouter un participant</h2>
+        <form id="add-participant-form" method="post" action="#">
+          <div>
+            <label for="participant-name">Nom ou pseudo du participant</label>
+            <input id="participant-name" name="participantName" type="text" required />
+          </div>
+
+          <button type="submit" id="add-participant-button">Ajouter</button>
+        </form>
+        <p id="add-participant-feedback" aria-live="polite"></p>
+      </section>
+
+      <section>
+        <h2>Actions</h2>
+        <button type="button" id="share-link-button">Copier le lien de partage</button>
+        <p id="share-link-feedback" aria-live="polite"></p>
+      </section>
+
+      <p><a href="host.html">Retour a la connexion Syncer</a></p>
+    </main>
+
+    <script src="js/maintenance.js" defer></script>
+    <script src="js/syncer.js" defer></script>
+  </body>
+</html>

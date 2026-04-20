@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# Si le fichier ou dossier existe, Apache le sert directement.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Toutes les routes API passent par le front controller PHP.
+RewriteRule ^api/.*$ api/index.php [QSA,L]
