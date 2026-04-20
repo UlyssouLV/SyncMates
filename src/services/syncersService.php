@@ -188,3 +188,58 @@ function getSyncerDetails(string $syncerId): array
     return $syncer;
 }
 
+/**
+ * Supprime un participant d'un Syncer existant.
+ *
+ * @param string $syncerId      Identifiant technique du Syncer.
+ * @param string $participantId Identifiant du participant à supprimer.
+ *
+ * @return array Syncer mis à jour, sans passwordHash.
+ *
+ * @throws InvalidArgumentException Si les identifiants sont invalides.
+ * @throws DomainException          Si le Syncer ou le participant n'existe pas.
+ */
+function deleteParticipantFromSyncer(string $syncerId, string $participantId): array
+{
+    $trimmedSyncerId = trim($syncerId);
+    $trimmedParticipantId = trim($participantId);
+
+    if ($trimmedSyncerId === '') {
+        throw new InvalidArgumentException('L\'identifiant du Syncer est requis.');
+    }
+
+    if ($trimmedParticipantId === '') {
+        throw new InvalidArgumentException('L\'identifiant du participant est requis.');
+    }
+
+    $syncer = getSyncerById($trimmedSyncerId);
+    if (!is_array($syncer)) {
+        throw new DomainException('Syncer introuvable.');
+    }
+
+    $participants = isset($syncer['participants']) && is_array($syncer['participants'])
+        ? $syncer['participants']
+        : [];
+
+    $filteredParticipants = [];
+    $participantFound = false;
+    foreach ($participants as $participant) {
+        $currentParticipantId = isset($participant['id']) ? (string) $participant['id'] : '';
+        if ($currentParticipantId === $trimmedParticipantId) {
+            $participantFound = true;
+            continue;
+        }
+        $filteredParticipants[] = $participant;
+    }
+
+    if (!$participantFound) {
+        throw new DomainException('Participant introuvable.');
+    }
+
+    $syncer['participants'] = $filteredParticipants;
+    saveSyncer($syncer);
+
+    unset($syncer['passwordHash']);
+    return $syncer;
+}
+

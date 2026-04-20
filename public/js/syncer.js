@@ -66,8 +66,17 @@ function renderParticipants(participants) {
 
   for (const participant of participants) {
     const item = document.createElement("li");
+    const participantId = String(participant?.id || "");
     const participantName = String(participant?.name || "Participant");
-    item.textContent = participantName;
+    item.textContent = `${participantName} `;
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.textContent = "Supprimer";
+    deleteButton.dataset.participantId = participantId;
+    deleteButton.className = "delete-participant-button";
+
+    item.appendChild(deleteButton);
     participantsList.appendChild(item);
   }
 }
@@ -146,6 +155,47 @@ async function addParticipant(currentSyncerId, participantName) {
   return data;
 }
 
+/**
+ * Appelle l'API de suppression de participant.
+ *
+ * @param {string} currentSyncerId Identifiant technique du Syncer.
+ * @param {string} participantId Identifiant du participant à supprimer.
+ * @returns {Promise<Object>} Réponse JSON de l'API.
+ * @throws {Error} Si la réponse API est en erreur.
+ */
+async function deleteParticipant(currentSyncerId, participantId) {
+  const response = await fetch(
+    `/api/syncers/${encodeURIComponent(currentSyncerId)}/participants/${encodeURIComponent(
+      participantId
+    )}`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  const rawResponse = await response.text();
+  let data = {};
+  try {
+    data = rawResponse ? JSON.parse(rawResponse) : {};
+  } catch (_parseError) {
+    data = {};
+  }
+
+  if (!response.ok) {
+    const backendMessage = data.error || "";
+    const fallbackMessage = rawResponse ? rawResponse.slice(0, 180) : "";
+    const details = backendMessage || fallbackMessage || "Aucun détail serveur.";
+    throw new Error(
+      `Erreur suppression participant (${response.status} ${response.statusText}) - ${details}`
+    );
+  }
+
+  return data;
+}
+
 // Initialisation de base depuis les params URL.
 const syncerId = getQueryParam("id");
 const syncerName = getQueryParam("name");
@@ -188,6 +238,7 @@ if (syncerId) {
 
 // Gestion du formulaire d'ajout de participant.
 const addParticipantForm = document.getElementById("add-participant-form");
+const participantsList = document.getElementById("participants-list");
 if (addParticipantForm) {
   addParticipantForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -218,6 +269,39 @@ if (addParticipantForm) {
       renderParticipants(participants);
       setAddParticipantFeedback("Participant ajouté avec succès.", false);
       addParticipantForm.reset();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erreur inconnue.";
+      setAddParticipantFeedback(message, true);
+    }
+  });
+}
+
+if (participantsList) {
+  participantsList.addEventListener("click", async (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    if (!target.classList.contains("delete-participant-button")) {
+      return;
+    }
+
+    const participantId = String(target.dataset.participantId || "");
+    if (!syncerId || !participantId) {
+      setAddParticipantFeedback("Suppression impossible: identifiant manquant.", true);
+      return;
+    }
+
+    setAddParticipantFeedback("Suppression en cours...", false);
+
+    try {
+      const result = await deleteParticipant(syncerId, participantId);
+      const participants = Array.isArray(result?.syncer?.participants)
+        ? result.syncer.participants
+        : [];
+      renderParticipants(participants);
+      setAddParticipantFeedback("Participant supprimé avec succès.", false);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
       setAddParticipantFeedback(message, true);

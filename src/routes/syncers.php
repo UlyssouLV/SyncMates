@@ -126,6 +126,37 @@ function handleAddParticipant(string $syncerId): void
 }
 
 /**
+ * Traite DELETE /api/syncers/{id}/participants/{participantId}.
+ *
+ * Supprime un participant du Syncer ciblé.
+ *
+ * @param string $syncerId      Identifiant technique du Syncer.
+ * @param string $participantId Identifiant du participant à supprimer.
+ */
+function handleDeleteParticipant(string $syncerId, string $participantId): void
+{
+    try {
+        $syncer = deleteParticipantFromSyncer($syncerId, $participantId);
+        jsonResponse(200, [
+            'message' => 'Participant supprimé.',
+            'syncer' => $syncer,
+        ]);
+    } catch (InvalidArgumentException $exception) {
+        jsonResponse(400, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (DomainException $exception) {
+        jsonResponse(404, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (Throwable $exception) {
+        jsonResponse(500, [
+            'error' => 'Erreur serveur lors de la suppression du participant.',
+        ]);
+    }
+}
+
+/**
  * Traite GET /api/syncers/{id}.
  *
  * Renvoie le détail public du Syncer, incluant la liste des participants.

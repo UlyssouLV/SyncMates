@@ -27,6 +27,8 @@ $getSyncerMatches = [];
 $isGetSyncerRoute = preg_match('#^/api/syncers/([^/]+)$#', $normalizedPath, $getSyncerMatches) === 1;
 $addParticipantMatches = [];
 $isAddParticipantRoute = preg_match('#^/api/syncers/([^/]+)/participants$#', $normalizedPath, $addParticipantMatches) === 1;
+$deleteParticipantMatches = [];
+$isDeleteParticipantRoute = preg_match('#^/api/syncers/([^/]+)/participants/([^/]+)$#', $normalizedPath, $deleteParticipantMatches) === 1;
 
 // Route: création d'un Syncer.
 if ($isCreateSyncerRoute && $method === 'POST') {
@@ -51,6 +53,14 @@ if ($isGetSyncerRoute && $method === 'GET') {
 if ($isAddParticipantRoute && $method === 'POST') {
     $syncerId = isset($addParticipantMatches[1]) ? (string) $addParticipantMatches[1] : '';
     handleAddParticipant($syncerId);
+    exit;
+}
+
+// Route: suppression d'un participant d'un Syncer.
+if ($isDeleteParticipantRoute && $method === 'DELETE') {
+    $syncerId = isset($deleteParticipantMatches[1]) ? (string) $deleteParticipantMatches[1] : '';
+    $participantId = isset($deleteParticipantMatches[2]) ? (string) $deleteParticipantMatches[2] : '';
+    handleDeleteParticipant($syncerId, $participantId);
     exit;
 }
 
