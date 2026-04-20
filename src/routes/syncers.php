@@ -89,6 +89,72 @@ function handleLoginSyncer(): void
 }
 
 /**
+ * Traite POST /api/syncers/{id}/participants.
+ *
+ * Ajoute un participant au Syncer ciblé.
+ *
+ * @param string $syncerId Identifiant technique du Syncer.
+ */
+function handleAddParticipant(string $syncerId): void
+{
+    $payload = parseJsonRequestBody();
+    if (!is_array($payload)) {
+        return;
+    }
+
+    $participantName = isset($payload['participantName']) ? (string) $payload['participantName'] : '';
+
+    try {
+        $syncer = addParticipantToSyncer($syncerId, $participantName);
+        jsonResponse(200, [
+            'message' => 'Participant ajouté.',
+            'syncer' => $syncer,
+        ]);
+    } catch (InvalidArgumentException $exception) {
+        jsonResponse(400, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (DomainException $exception) {
+        jsonResponse(409, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (Throwable $exception) {
+        jsonResponse(500, [
+            'error' => 'Erreur serveur lors de l\'ajout du participant.',
+        ]);
+    }
+}
+
+/**
+ * Traite GET /api/syncers/{id}.
+ *
+ * Renvoie le détail public du Syncer, incluant la liste des participants.
+ *
+ * @param string $syncerId Identifiant technique du Syncer.
+ */
+function handleGetSyncerDetails(string $syncerId): void
+{
+    try {
+        $syncer = getSyncerDetails($syncerId);
+        jsonResponse(200, [
+            'syncer' => $syncer,
+        ]);
+    } catch (InvalidArgumentException $exception) {
+        jsonResponse(400, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (DomainException $exception) {
+        jsonResponse(404, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (Throwable $exception) {
+        jsonResponse(500, [
+            'error' => 'Erreur serveur lors de la récupération du Syncer.',
+        ]);
+    }
+}
+
+/**
  * Valide et parse un body JSON HTTP.
  *
  * @return array|null Tableau associatif du body JSON, sinon null si erreur.

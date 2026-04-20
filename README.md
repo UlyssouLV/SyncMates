@@ -141,12 +141,21 @@ Chaque Syncer est stocké dans son propre fichier JSON : `data/syncers/{syncerId
 
 La sécurité est incluse dès la V1 (pas reportée).
 
-- **Host** : authentification par mot de passe, création d'une session côté serveur
-- **Cookie de session** : `HttpOnly`, `Secure` (en HTTPS), `SameSite=Lax`, durée alignée sur l'expiration du Syncer
+- **Host** : authentification par nom/ID + mot de passe
+- **Session/Cookie** : prévus ensuite (pas encore activés dans l'implémentation actuelle)
 - **Participants** : accès via lien sécurisé contenant un `shareToken` non prévisible
-- **Contrôle d'accès** : endpoints host accessibles uniquement avec session valide
+- **Contrôle d'accès** : endpoints host actuellement sans session persistée
 - **Mots de passe** : stockés hashés (`password_hash` / `password_verify` en PHP)
 - **Protection API** : validation stricte des entrées et vérification systématique de l'expiration 48h
+
+---
+
+## API cible (V1)
+
+- `POST /api/syncers` : créer un Syncer
+- `POST /api/syncers/login` : connexion host à un Syncer existant
+- `GET /api/syncers/{id}` : récupérer les détails d'un Syncer
+- `POST /api/syncers/{id}/participants` : ajouter un participant
 
 ---
 
@@ -164,6 +173,9 @@ La sécurité est incluse dès la V1 (pas reportée).
 - Formulaire "Créer un Syncer" branché côté frontend (`public/host.html` -> `public/js/host.js`)
 - Route API de connexion Syncer implémentée : `POST /api/syncers/login`
 - Formulaire "Connexion Syncer" branché côté frontend avec redirection vers `syncer.html`
+- Route API de détail Syncer implémentée : `GET /api/syncers/{id}`
+- Route API d'ajout participant implémentée : `POST /api/syncers/{id}/participants`
+- Page `syncer.html` branchée avec chargement automatique des participants au refresh
 - Routage Apache API en place via `public/.htaccess`
 
 ---
@@ -173,8 +185,8 @@ La sécurité est incluse dès la V1 (pas reportée).
 - [x] Initialiser le projet PHP (`public`, `src`, `data`, `.htaccess`)
 - [x] Créer l'architecture dossiers `public`, `src`, `data`
 - [x] Implémenter le stockage JSON robuste (1 fichier par Syncer + lecture/écriture atomique)
-- [ ] Compléter les endpoints Syncer + participants
-- [ ] Finaliser auth host (session serveur sécurisée + logout)
+- [ ] Compléter les endpoints Syncer + participants (suppression participant, mise à jour indisponibilités, résultats)
+- [ ] Finaliser auth host (session serveur sécurisée)
 - [ ] Implémenter sessions serveur + cookie `HttpOnly`/`Secure`/`SameSite`
 - [ ] Protéger les endpoints host par vérification de session
 - [ ] Créer saisie d'indisponibilités côté participant

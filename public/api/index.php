@@ -23,6 +23,10 @@ $normalizedPath = rtrim($path, '/');
 
 $isCreateSyncerRoute = $normalizedPath === '/api/syncers';
 $isLoginSyncerRoute = $normalizedPath === '/api/syncers/login';
+$getSyncerMatches = [];
+$isGetSyncerRoute = preg_match('#^/api/syncers/([^/]+)$#', $normalizedPath, $getSyncerMatches) === 1;
+$addParticipantMatches = [];
+$isAddParticipantRoute = preg_match('#^/api/syncers/([^/]+)/participants$#', $normalizedPath, $addParticipantMatches) === 1;
 
 // Route: création d'un Syncer.
 if ($isCreateSyncerRoute && $method === 'POST') {
@@ -33,6 +37,20 @@ if ($isCreateSyncerRoute && $method === 'POST') {
 // Route: connexion à un Syncer.
 if ($isLoginSyncerRoute && $method === 'POST') {
     handleLoginSyncer();
+    exit;
+}
+
+// Route: détail d'un Syncer.
+if ($isGetSyncerRoute && $method === 'GET') {
+    $syncerId = isset($getSyncerMatches[1]) ? (string) $getSyncerMatches[1] : '';
+    handleGetSyncerDetails($syncerId);
+    exit;
+}
+
+// Route: ajout d'un participant à un Syncer.
+if ($isAddParticipantRoute && $method === 'POST') {
+    $syncerId = isset($addParticipantMatches[1]) ? (string) $addParticipantMatches[1] : '';
+    handleAddParticipant($syncerId);
     exit;
 }
 

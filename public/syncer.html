@@ -27,10 +27,20 @@
       </section>
 
       <section>
+        <h2>Ajouter un participant</h2>
+        <form id="add-participant-form" method="post" action="#">
+          <div>
+            <label for="participant-name">Nom ou pseudo du participant</label>
+            <input id="participant-name" name="participantName" type="text" required />
+          </div>
+
+          <button type="submit" id="add-participant-button">Ajouter</button>
+        </form>
+        <p id="add-participant-feedback" aria-live="polite"></p>
+      </section>
+
+      <section>
         <h2>Actions</h2>
-        <button type="button" id="add-participant-button" disabled>
-          Ajouter un participant (bientot)
-        </button>
         <button type="button" id="share-link-button" disabled>
           Copier le lien de partage (bientot)
         </button>

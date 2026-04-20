@@ -25,3 +25,11 @@ function generateShareToken(): string
     return bin2hex(random_bytes(24));
 }
 
+/**
+ * Génère un identifiant unique de participant.
+ */
+function generateParticipantId(): string
+{
+    return 'p_' . bin2hex(random_bytes(6));
+}
+

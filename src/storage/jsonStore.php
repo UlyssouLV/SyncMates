@@ -208,3 +208,24 @@ function findSyncerForLogin(string $identifier, string $password): ?array
     return null;
 }
 
+/**
+ * Charge un Syncer depuis son identifiant technique.
+ *
+ * @param string $syncerId Identifiant du Syncer.
+ *
+ * @return array|null Syncer trouvé, sinon null.
+ */
+function getSyncerById(string $syncerId): ?array
+{
+    if ($syncerId === '') {
+        return null;
+    }
+
+    $path = syncerFilePath($syncerId);
+    if (!file_exists($path)) {
+        return null;
+    }
+
+    return readSyncerFromPath($path);
+}
+

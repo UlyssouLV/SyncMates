@@ -109,3 +109,82 @@ function loginSyncer(string $identifier, string $password): array
     return $syncer;
 }
 
+/**
+ * Ajoute un participant à un Syncer existant.
+ *
+ * @param string $syncerId        Identifiant technique du Syncer.
+ * @param string $participantName Nom du participant à ajouter.
+ *
+ * @return array Syncer mis à jour, sans passwordHash.
+ *
+ * @throws InvalidArgumentException Si les paramètres sont invalides.
+ * @throws DomainException          Si ressource invalide.
+ */
+function addParticipantToSyncer(string $syncerId, string $participantName): array
+{
+    $trimmedSyncerId = trim($syncerId);
+    $trimmedParticipantName = trim($participantName);
+
+    if ($trimmedSyncerId === '') {
+        throw new InvalidArgumentException('L\'identifiant du Syncer est requis.');
+    }
+
+    if ($trimmedParticipantName === '') {
+        throw new InvalidArgumentException('Le nom du participant est requis.');
+    }
+
+    $syncer = getSyncerById($trimmedSyncerId);
+    if (!is_array($syncer)) {
+        throw new DomainException('Syncer introuvable.');
+    }
+
+    $participants = isset($syncer['participants']) && is_array($syncer['participants'])
+        ? $syncer['participants']
+        : [];
+
+    foreach ($participants as $participant) {
+        $existingName = isset($participant['name']) ? (string) $participant['name'] : '';
+        if ($existingName !== '' && strtolower($existingName) === strtolower($trimmedParticipantName)) {
+            throw new DomainException('Un participant avec ce nom existe déjà.');
+        }
+    }
+
+    $participants[] = [
+        'id' => generateParticipantId(),
+        'name' => $trimmedParticipantName,
+        'unavailableDates' => [],
+    ];
+
+    $syncer['participants'] = $participants;
+    saveSyncer($syncer);
+
+    unset($syncer['passwordHash']);
+    return $syncer;
+}
+
+/**
+ * Retourne le détail d'un Syncer par son identifiant.
+ *
+ * @param string $syncerId Identifiant technique du Syncer.
+ *
+ * @return array Syncer trouvé, sans passwordHash.
+ *
+ * @throws InvalidArgumentException Si l'identifiant est vide.
+ * @throws DomainException          Si le Syncer n'existe pas.
+ */
+function getSyncerDetails(string $syncerId): array
+{
+    $trimmedSyncerId = trim($syncerId);
+    if ($trimmedSyncerId === '') {
+        throw new InvalidArgumentException('L\'identifiant du Syncer est requis.');
+    }
+
+    $syncer = getSyncerById($trimmedSyncerId);
+    if (!is_array($syncer)) {
+        throw new DomainException('Syncer introuvable.');
+    }
+
+    unset($syncer['passwordHash']);
+    return $syncer;
+}
+
