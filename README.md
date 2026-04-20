@@ -20,11 +20,11 @@ L'application affiche ensuite une vue synthétique :
 - indisponibilités de tous
 - plages où le plus de monde est disponible
 
-Objectif V1 : valider le fonctionnement métier avant le design (HTML simple, CSS minimal).
+Objectif V1.0.0 : valider le fonctionnement métier avant le design (HTML simple, CSS minimal).
 
 ---
 
-## Fonctionnalités attendues V1.0.0
+## Fonctionnalités V1.0.0
 
 ### 1) Création de Syncer
 - Créer un Syncer avec `name` + `password`
@@ -48,7 +48,7 @@ Objectif V1 : valider le fonctionnement métier avant le design (HTML simple, CS
 
 ### 5) Expiration des données
 - Les Syncers expirés (>48h) ne sont plus exploitables
-- Mécanisme de nettoyage des données expirées
+- Mécanisme de nettoyage des données expirées (sessions)
 
 ### 6) Hors périmètre V1 (plus tard)
 - Paiement 1 EUR pour prolonger 1 mois
@@ -63,11 +63,6 @@ Objectif V1 : valider le fonctionnement métier avant le design (HTML simple, CS
 - Backend : PHP 8+ (API simple sur hébergement Apache)
 - Stockage : fichiers JSON (pas de base SQL en V1), avec 1 fichier par Syncer
 - Sécurité : sessions serveur + cookie de session `HttpOnly` dès la V1
-
-Pourquoi JSON en V1 :
-- mise en place rapide
-- facile à débugger
-- cohérent avec un prototype métier
 
 ---
 
@@ -178,63 +173,3 @@ La sécurité est incluse dès la V1 (pas reportée).
 
 ---
 
-
-## État actuel du projet
-
-- Nom du repo défini : `SyncMates`
-- Branche de travail créée : `1.0.0`
-- Vision produit V1 clarifiée dans ce README
-- Arborescence backend/frontend créée (`public`, `src`, `data`)
-- Route API de création de Syncer implémentée : `POST /api/syncers`
-- Stockage JSON opérationnel avec 1 fichier par Syncer (`data/syncers/{id}.json`)
-- Validation de création en place (champs requis + JSON + Content-Type)
-- Règle anti-doublon implémentée sur l'association `name + password`
-- Formulaire "Créer un Syncer" branché côté frontend (`public/host.html` -> `public/js/host.js`)
-- Route API de connexion Syncer implémentée : `POST /api/syncers/login`
-- Formulaire "Connexion Syncer" branché côté frontend avec redirection vers `syncer.html`
-- Route API de détail Syncer implémentée : `GET /api/syncers/{id}`
-- Route API de chargement des profils participants implémentée : `GET /api/syncers/{id}/participants`
-- Route API d'ajout participant implémentée : `POST /api/syncers/{id}/participants`
-- Route API de suppression participant implémentée : `DELETE /api/syncers/{id}/participants/{participantId}`
-- Route API de chargement indisponibilités participant implémentée : `GET /api/syncers/{id}/participants/{participantId}/unavailabilities`
-- Route API d'enregistrement indisponibilités participant implémentée : `PATCH /api/syncers/{id}/participants/{participantId}/unavailabilities`
-- Route API de configuration de période implémentée : `PATCH /api/syncers/{id}/event-period`
-- Page `syncer.html` branchée avec chargement automatique des participants au refresh
-- Suppression participant disponible côté UI via bouton "Supprimer"
-- Configuration de période disponible côté UI (`date début` / `date fin`)
-- Page `participant.html` branchée avec chargement des profils participants dans le select
-- Page `participant.html` branchée avec chargement/enregistrement des indisponibilités par profil
-- Grille de saisie des indisponibilités pilotée par la plage `eventStartDate` / `eventEndDate`
-- Route API des résultats implémentée : `GET /api/syncers/{id}/results`
-- Page `result.html` branchée au backend via `public/js/result.js`
-- Affichage des meilleures dates + détail journalier + résumé participants opérationnel
-- Top des meilleures dates gère les ex-aequo sur le meilleur score
-- Bouton "Copier le lien de partage" fonctionnel sur `syncer.html`
-- Copie du lien avec fallback navigateur (`Clipboard API` + `execCommand`)
-- Routage Apache API en place via `public/.htaccess`
-- Session host implémentée en stockage JSON dédié (`data/sessions`)
-- Cookie host `HttpOnly` + `SameSite=Lax` + `Secure` (si HTTPS) posé au login
-- Endpoints host protégés par session (`GET /api/syncers/{id}`, `POST/DELETE participants`, `PATCH event-period`)
-- Redirection automatique vers `host.html` depuis `syncer.html` sur erreur `401` (session expirée/invalide)
-- Mécanisme de maintenance opportuniste ajouté (`maintenance.js` + endpoint backend)
-- Nettoyage sessions expirées implémenté (`scripts/cleanupExpiredSessions.php`)
-- Nettoyage Syncers expirés implémenté (`scripts/cleanupExpiredSyncers.php`)
-- Métadonnées de maintenance persistées dans `data/maintenance/cleanup-meta.json`
-
----
-
-## Reste à développer (checklist V1.0.0)
-
-- [x] Initialiser le projet PHP (`public`, `src`, `data`, `.htaccess`)
-- [x] Créer l'architecture dossiers `public`, `src`, `data`
-- [x] Implémenter le stockage JSON robuste (1 fichier par Syncer + lecture/écriture atomique)
-- [x] Compléter les endpoints Syncer + participants (résultats et agrégation des disponibilités)
-- [x] Exploiter `eventStartDate` / `eventEndDate` dans la saisie et l'analyse des indisponibilités
-- [x] Finaliser auth host (session serveur sécurisée)
-- [x] Implémenter sessions serveur + cookie `HttpOnly`/`Secure`/`SameSite`
-- [x] Protéger les endpoints host par vérification de session
-- [x] Implémenter calcul "meilleures dates"
-- [x] Finaliser les pages HTML de base (sans style avancé)
-- [x] Gérer expiration 48h
-
----
