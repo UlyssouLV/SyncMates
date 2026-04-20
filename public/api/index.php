@@ -33,6 +33,8 @@ $eventPeriodMatches = [];
 $isEventPeriodRoute = preg_match('#^/api/syncers/([^/]+)/event-period$#', $normalizedPath, $eventPeriodMatches) === 1;
 $participantUnavailabilitiesMatches = [];
 $isParticipantUnavailabilitiesRoute = preg_match('#^/api/syncers/([^/]+)/participants/([^/]+)/unavailabilities$#', $normalizedPath, $participantUnavailabilitiesMatches) === 1;
+$resultsMatches = [];
+$isResultsRoute = preg_match('#^/api/syncers/([^/]+)/results$#', $normalizedPath, $resultsMatches) === 1;
 
 // Route: création d'un Syncer.
 if ($isCreateSyncerRoute && $method === 'POST') {
@@ -79,6 +81,13 @@ if ($isDeleteParticipantRoute && $method === 'DELETE') {
 if ($isEventPeriodRoute && $method === 'PATCH') {
     $syncerId = isset($eventPeriodMatches[1]) ? (string) $eventPeriodMatches[1] : '';
     handleConfigureEventPeriod($syncerId);
+    exit;
+}
+
+// Route: résultats de disponibilité d'un Syncer.
+if ($isResultsRoute && $method === 'GET') {
+    $syncerId = isset($resultsMatches[1]) ? (string) $resultsMatches[1] : '';
+    handleGetSyncerResults($syncerId);
     exit;
 }
 

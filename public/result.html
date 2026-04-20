@@ -1,1 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SyncMates - Résultats</title>
+  </head>
+  <body>
+    <main>
+      <h1>Résultats du Syncer</h1>
+      <p>
+        Visualise les dates les plus favorables selon les indisponibilités
+        enregistrées par les participants.
+      </p>
+
+      <section>
+        <h2>Informations Syncer</h2>
+        <p><strong>Nom du Syncer :</strong> <span id="syncer-name">-</span></p>
+        <p><strong>Période :</strong> <span id="syncer-period">-</span></p>
+        <p>
+          <strong>Nombre de participants :</strong>
+          <span id="participants-count">0</span>
+        </p>
+      </section>
+
+      <section>
+        <h2>Top dates recommandées</h2>
+        <ol id="best-dates-list">
+          <li>Aucun calcul disponible pour le moment.</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Détail par date</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Participants disponibles</th>
+              <th>Participants indisponibles</th>
+              <th>Taux de disponibilité</th>
+            </tr>
+          </thead>
+          <tbody id="availability-table-body">
+            <tr>
+              <td colspan="4">Aucune donnée de disponibilité à afficher.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Participants</h2>
+        <ul id="participants-summary-list">
+          <li>Aucun participant pour le moment.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Actions</h2>
+        <button type="button" id="refresh-results-button">
+          Rafraîchir les résultats
+        </button>
+      </section>
+
+      <p id="results-feedback" aria-live="polite"></p>
+
+      <p><a href="syncer.html">Retour au Syncer</a></p>
+    </main>
+
+    <script src="js/result.js" defer></script>
+  </body>
+</html>
 

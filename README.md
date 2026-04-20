@@ -163,6 +163,7 @@ La sécurité est incluse dès la V1 (pas reportée).
 - `GET /api/syncers/{id}/participants/{participantId}/unavailabilities` : charger les indisponibilités d'un participant
 - `PATCH /api/syncers/{id}/participants/{participantId}/unavailabilities` : enregistrer les indisponibilités d'un participant
 - `PATCH /api/syncers/{id}/event-period` : configurer la plage de l'évènement
+- `GET /api/syncers/{id}/results` : récupérer les résultats agrégés de disponibilité
 
 ---
 
@@ -193,6 +194,10 @@ La sécurité est incluse dès la V1 (pas reportée).
 - Page `participant.html` branchée avec chargement des profils participants dans le select
 - Page `participant.html` branchée avec chargement/enregistrement des indisponibilités par profil
 - Grille de saisie des indisponibilités pilotée par la plage `eventStartDate` / `eventEndDate`
+- Route API des résultats implémentée : `GET /api/syncers/{id}/results`
+- Page `result.html` branchée au backend via `public/js/result.js`
+- Affichage des meilleures dates + détail journalier + résumé participants opérationnel
+- Top des meilleures dates gère les ex-aequo sur le meilleur score
 - Routage Apache API en place via `public/.htaccess`
 
 ---
@@ -202,14 +207,13 @@ La sécurité est incluse dès la V1 (pas reportée).
 - [x] Initialiser le projet PHP (`public`, `src`, `data`, `.htaccess`)
 - [x] Créer l'architecture dossiers `public`, `src`, `data`
 - [x] Implémenter le stockage JSON robuste (1 fichier par Syncer + lecture/écriture atomique)
-- [ ] Compléter les endpoints Syncer + participants (résultats et agrégation des disponibilités)
-- [ ] Exploiter `eventStartDate` / `eventEndDate` dans la saisie et l'analyse des indisponibilités
+- [x] Compléter les endpoints Syncer + participants (résultats et agrégation des disponibilités)
+- [x] Exploiter `eventStartDate` / `eventEndDate` dans la saisie et l'analyse des indisponibilités
 - [ ] Finaliser auth host (session serveur sécurisée)
 - [ ] Implémenter sessions serveur + cookie `HttpOnly`/`Secure`/`SameSite`
 - [ ] Protéger les endpoints host par vérification de session
-- [ ] Implémenter calcul "meilleures dates"
+- [x] Implémenter calcul "meilleures dates"
 - [ ] Finaliser les pages HTML de base (sans style avancé)
 - [ ] Gérer expiration 48h
-- [ ] Ajouter validation d'entrées et gestion d'erreurs
 
 ---

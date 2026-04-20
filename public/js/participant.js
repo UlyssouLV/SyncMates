@@ -156,17 +156,40 @@ function buildDateRange(eventStartDate, eventEndDate) {
     return dates;
   }
 
-  const start = new Date(`${eventStartDate}T00:00:00`);
-  const end = new Date(`${eventEndDate}T00:00:00`);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) {
+  const parseIsoDateToUtc = (isoDate) => {
+    const parts = isoDate.split("-");
+    if (parts.length !== 3) {
+      return null;
+    }
+
+    const year = Number(parts[0]);
+    const month = Number(parts[1]);
+    const day = Number(parts[2]);
+    if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+      return null;
+    }
+
+    return new Date(Date.UTC(year, month - 1, day));
+  };
+
+  const formatUtcDateToIso = (date) => {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const start = parseIsoDateToUtc(eventStartDate);
+  const end = parseIsoDateToUtc(eventEndDate);
+  if (!(start instanceof Date) || !(end instanceof Date) || start > end) {
     return dates;
   }
 
   const current = new Date(start);
   while (current <= end) {
-    const isoDate = current.toISOString().slice(0, 10);
+    const isoDate = formatUtcDateToIso(current);
     dates.push(isoDate);
-    current.setDate(current.getDate() + 1);
+    current.setUTCDate(current.getUTCDate() + 1);
   }
 
   return dates;

@@ -320,6 +320,35 @@ function handleUpdateParticipantUnavailabilities(string $syncerId, string $parti
 }
 
 /**
+ * Traite GET /api/syncers/{id}/results.
+ *
+ * Renvoie les résultats agrégés de disponibilité pour la période du Syncer.
+ *
+ * @param string $syncerId Identifiant technique du Syncer.
+ */
+function handleGetSyncerResults(string $syncerId): void
+{
+    try {
+        $results = getSyncerResults($syncerId);
+        jsonResponse(200, [
+            'results' => $results,
+        ]);
+    } catch (InvalidArgumentException $exception) {
+        jsonResponse(400, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (DomainException $exception) {
+        jsonResponse(404, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (Throwable $exception) {
+        jsonResponse(500, [
+            'error' => 'Erreur serveur lors du calcul des résultats.',
+        ]);
+    }
+}
+
+/**
  * Valide et parse un body JSON HTTP.
  *
  * @return array|null Tableau associatif du body JSON, sinon null si erreur.

@@ -471,3 +471,122 @@ function isValidIsoDate(string $date): bool
     return checkdate($month, $day, $year);
 }
 
+/**
+ * Calcule les résultats de disponibilité d'un Syncer.
+ *
+ * Le calcul est basé sur:
+ * - la plage eventStartDate/eventEndDate,
+ * - les unavailableDates de chaque participant.
+ *
+ * @param string $syncerId Identifiant technique du Syncer.
+ *
+ * @return array Résultats agrégés (bestDates, dailyAvailability, participants).
+ *
+ * @throws InvalidArgumentException Si l'identifiant est invalide.
+ * @throws DomainException          Si le Syncer/plage est introuvable ou invalide.
+ */
+function getSyncerResults(string $syncerId): array
+{
+    $trimmedSyncerId = trim($syncerId);
+    if ($trimmedSyncerId === '') {
+        throw new InvalidArgumentException('L\'identifiant du Syncer est requis.');
+    }
+
+    $syncer = getSyncerById($trimmedSyncerId);
+    if (!is_array($syncer)) {
+        throw new DomainException('Syncer introuvable.');
+    }
+
+    $eventStartDate = isset($syncer['eventStartDate']) ? (string) $syncer['eventStartDate'] : '';
+    $eventEndDate = isset($syncer['eventEndDate']) ? (string) $syncer['eventEndDate'] : '';
+    if (!isValidIsoDate($eventStartDate) || !isValidIsoDate($eventEndDate)) {
+        throw new DomainException('La période de l\'évènement n\'est pas configurée correctement.');
+    }
+    if ($eventStartDate > $eventEndDate) {
+        throw new DomainException('La période du Syncer est invalide.');
+    }
+
+    $participants = isset($syncer['participants']) && is_array($syncer['participants'])
+        ? $syncer['participants']
+        : [];
+    $totalParticipants = count($participants);
+
+    $participantSummaries = [];
+    foreach ($participants as $participant) {
+        $participantSummaries[] = [
+            'id' => isset($participant['id']) ? (string) $participant['id'] : '',
+            'name' => isset($participant['name']) ? (string) $participant['name'] : '',
+            'unavailableDates' => isset($participant['unavailableDates']) && is_array($participant['unavailableDates'])
+                ? array_values($participant['unavailableDates'])
+                : [],
+        ];
+    }
+
+    $dailyAvailability = [];
+    $currentDate = $eventStartDate;
+    while ($currentDate <= $eventEndDate) {
+        $unavailableCount = 0;
+        $unavailableParticipants = [];
+
+        foreach ($participants as $participant) {
+            $name = isset($participant['name']) ? (string) $participant['name'] : 'Participant';
+            $unavailableDates = isset($participant['unavailableDates']) && is_array($participant['unavailableDates'])
+                ? $participant['unavailableDates']
+                : [];
+            if (in_array($currentDate, $unavailableDates, true)) {
+                $unavailableCount++;
+                $unavailableParticipants[] = $name;
+            }
+        }
+
+        $availableCount = max(0, $totalParticipants - $unavailableCount);
+        $availabilityRate = $totalParticipants > 0
+            ? round(($availableCount / $totalParticipants) * 100, 2)
+            : 0.0;
+
+        $dailyAvailability[] = [
+            'date' => $currentDate,
+            'availableCount' => $availableCount,
+            'unavailableCount' => $unavailableCount,
+            'availabilityRate' => $availabilityRate,
+            'unavailableParticipants' => $unavailableParticipants,
+        ];
+
+        $currentDate = date('Y-m-d', strtotime($currentDate . ' +1 day'));
+    }
+
+    // Trie les dates selon la dispo la plus élevée puis date croissante.
+    $sortedDates = $dailyAvailability;
+    usort($sortedDates, static function (array $a, array $b): int {
+        if ($a['availableCount'] === $b['availableCount']) {
+            return strcmp((string) $a['date'], (string) $b['date']);
+        }
+        return $b['availableCount'] <=> $a['availableCount'];
+    });
+
+    // Le top contient toutes les dates ex aequo sur le meilleur score.
+    $bestDates = [];
+    if (count($sortedDates) > 0) {
+        $bestAvailableCount = (int) $sortedDates[0]['availableCount'];
+        foreach ($sortedDates as $dateRow) {
+            if ((int) $dateRow['availableCount'] !== $bestAvailableCount) {
+                break;
+            }
+            $bestDates[] = $dateRow;
+        }
+    }
+
+    return [
+        'syncer' => [
+            'id' => isset($syncer['id']) ? (string) $syncer['id'] : '',
+            'name' => isset($syncer['name']) ? (string) $syncer['name'] : '',
+            'eventStartDate' => $eventStartDate,
+            'eventEndDate' => $eventEndDate,
+        ],
+        'participantsCount' => $totalParticipants,
+        'participants' => $participantSummaries,
+        'bestDates' => $bestDates,
+        'dailyAvailability' => $dailyAvailability,
+    ];
+}
+
