@@ -95,9 +95,9 @@ SyncMates/
       syncers.php
     services/
       syncersService.php
-      availabilityService.php
     storage/
       jsonStore.php
+      sessionStore.php
     utils/
       date.php
       id.php
@@ -105,6 +105,8 @@ SyncMates/
     syncers/
       sync_abc123.json
       sync_def456.json
+    sessions/
+      hs_xxx.json
   .htaccess
 ```
 
@@ -144,9 +146,9 @@ Chaque Syncer est stocké dans son propre fichier JSON : `data/syncers/{syncerId
 La sécurité est incluse dès la V1 (pas reportée).
 
 - **Host** : authentification par nom/ID + mot de passe
-- **Session/Cookie** : prévus ensuite (pas encore activés dans l'implémentation actuelle)
+- **Session/Cookie** : session serveur JSON (`data/sessions/{sessionId}.json`) + cookie `host_session` (`HttpOnly`, `SameSite=Lax`, `Secure` en HTTPS)
 - **Participants** : accès via lien sécurisé contenant un `shareToken` non prévisible
-- **Contrôle d'accès** : endpoints host actuellement sans session persistée
+- **Contrôle d'accès** : endpoints host protégés par vérification de session + association session/syncer
 - **Mots de passe** : stockés hashés (`password_hash` / `password_verify` en PHP)
 - **Protection API** : validation stricte des entrées et vérification systématique de l'expiration 48h
 
@@ -201,6 +203,10 @@ La sécurité est incluse dès la V1 (pas reportée).
 - Bouton "Copier le lien de partage" fonctionnel sur `syncer.html`
 - Copie du lien avec fallback navigateur (`Clipboard API` + `execCommand`)
 - Routage Apache API en place via `public/.htaccess`
+- Session host implémentée en stockage JSON dédié (`data/sessions`)
+- Cookie host `HttpOnly` + `SameSite=Lax` + `Secure` (si HTTPS) posé au login
+- Endpoints host protégés par session (`GET /api/syncers/{id}`, `POST/DELETE participants`, `PATCH event-period`)
+- Redirection automatique vers `host.html` depuis `syncer.html` sur erreur `401` (session expirée/invalide)
 
 ---
 
@@ -211,9 +217,9 @@ La sécurité est incluse dès la V1 (pas reportée).
 - [x] Implémenter le stockage JSON robuste (1 fichier par Syncer + lecture/écriture atomique)
 - [x] Compléter les endpoints Syncer + participants (résultats et agrégation des disponibilités)
 - [x] Exploiter `eventStartDate` / `eventEndDate` dans la saisie et l'analyse des indisponibilités
-- [ ] Finaliser auth host (session serveur sécurisée)
-- [ ] Implémenter sessions serveur + cookie `HttpOnly`/`Secure`/`SameSite`
-- [ ] Protéger les endpoints host par vérification de session
+- [x] Finaliser auth host (session serveur sécurisée)
+- [x] Implémenter sessions serveur + cookie `HttpOnly`/`Secure`/`SameSite`
+- [x] Protéger les endpoints host par vérification de session
 - [x] Implémenter calcul "meilleures dates"
 - [x] Finaliser les pages HTML de base (sans style avancé)
 - [ ] Gérer expiration 48h

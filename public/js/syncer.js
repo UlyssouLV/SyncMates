@@ -32,6 +32,37 @@ function setTextById(elementId, value) {
 }
 
 /**
+ * Crée une erreur enrichie avec code HTTP.
+ *
+ * @param {string} message Message d'erreur.
+ * @param {number} status Code HTTP.
+ * @returns {Error & {status?: number}} Erreur enrichie.
+ */
+function buildHttpError(message, status) {
+  const error = new Error(message);
+  error.status = Number(status || 0);
+  return error;
+}
+
+/**
+ * Redirige vers host.html si la session host est invalide/expirée.
+ *
+ * @param {unknown} error Erreur levée par une requête API.
+ * @returns {boolean} true si redirection déclenchée.
+ */
+function redirectToHostIfUnauthorized(error) {
+  const status = Number(error?.status || 0);
+  if (status !== 401) {
+    return false;
+  }
+
+  const targetUrl = new URL("host.html", window.location.href);
+  targetUrl.searchParams.set("reason", "session-expired");
+  window.location.href = targetUrl.toString();
+  return true;
+}
+
+/**
  * Affiche un feedback textuel pour l'ajout participant.
  *
  * @param {string} message Message utilisateur.
@@ -218,8 +249,9 @@ async function getSyncerDetails(currentSyncerId) {
     const backendMessage = data.error || "";
     const fallbackMessage = rawResponse ? rawResponse.slice(0, 180) : "";
     const details = backendMessage || fallbackMessage || "Aucun détail serveur.";
-    throw new Error(
-      `Erreur chargement Syncer (${response.status} ${response.statusText}) - ${details}`
+    throw buildHttpError(
+      `Erreur chargement Syncer (${response.status} ${response.statusText}) - ${details}`,
+      response.status
     );
   }
 
@@ -257,8 +289,9 @@ async function addParticipant(currentSyncerId, participantName) {
     const backendMessage = data.error || "";
     const fallbackMessage = rawResponse ? rawResponse.slice(0, 180) : "";
     const details = backendMessage || fallbackMessage || "Aucun détail serveur.";
-    throw new Error(
-      `Erreur ajout participant (${response.status} ${response.statusText}) - ${details}`
+    throw buildHttpError(
+      `Erreur ajout participant (${response.status} ${response.statusText}) - ${details}`,
+      response.status
     );
   }
 
@@ -298,8 +331,9 @@ async function deleteParticipant(currentSyncerId, participantId) {
     const backendMessage = data.error || "";
     const fallbackMessage = rawResponse ? rawResponse.slice(0, 180) : "";
     const details = backendMessage || fallbackMessage || "Aucun détail serveur.";
-    throw new Error(
-      `Erreur suppression participant (${response.status} ${response.statusText}) - ${details}`
+    throw buildHttpError(
+      `Erreur suppression participant (${response.status} ${response.statusText}) - ${details}`,
+      response.status
     );
   }
 
@@ -339,8 +373,9 @@ async function configureEventPeriod(currentSyncerId, eventStartDate, eventEndDat
     const backendMessage = data.error || "";
     const fallbackMessage = rawResponse ? rawResponse.slice(0, 180) : "";
     const details = backendMessage || fallbackMessage || "Aucun détail serveur.";
-    throw new Error(
-      `Erreur configuration période (${response.status} ${response.statusText}) - ${details}`
+    throw buildHttpError(
+      `Erreur configuration période (${response.status} ${response.statusText}) - ${details}`,
+      response.status
     );
   }
 
@@ -396,6 +431,9 @@ if (syncerId) {
       setShareLinkFeedback("Lien de partage prêt à être copié.", false);
     })
     .catch((error) => {
+      if (redirectToHostIfUnauthorized(error)) {
+        return;
+      }
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
       setAddParticipantFeedback(message, true);
       setShareLinkFeedback("Impossible de préparer le lien de partage.", true);
@@ -437,6 +475,9 @@ if (addParticipantForm) {
       setAddParticipantFeedback("Participant ajouté avec succès.", false);
       addParticipantForm.reset();
     } catch (error) {
+      if (redirectToHostIfUnauthorized(error)) {
+        return;
+      }
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
       setAddParticipantFeedback(message, true);
     }
@@ -475,6 +516,9 @@ if (eventPeriodForm) {
       hydrateEventPeriodForm(start, end);
       setEventPeriodFeedback("Période configurée avec succès.", false);
     } catch (error) {
+      if (redirectToHostIfUnauthorized(error)) {
+        return;
+      }
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
       setEventPeriodFeedback(message, true);
     }
@@ -508,6 +552,9 @@ if (participantsList) {
       renderParticipants(participants);
       setAddParticipantFeedback("Participant supprimé avec succès.", false);
     } catch (error) {
+      if (redirectToHostIfUnauthorized(error)) {
+        return;
+      }
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
       setAddParticipantFeedback(message, true);
     }

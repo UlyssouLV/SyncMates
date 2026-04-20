@@ -12,6 +12,10 @@ declare(strict_types=1);
  * - traduction des exceptions en réponses HTTP.
  */
 require_once __DIR__ . '/../services/syncersService.php';
+require_once __DIR__ . '/../storage/sessionStore.php';
+
+const HOST_SESSION_COOKIE_NAME = 'host_session';
+const HOST_SESSION_TTL_SECONDS = 300;
 
 /**
  * Traite POST /api/syncers.
@@ -69,6 +73,18 @@ function handleLoginSyncer(): void
 
     try {
         $syncer = loginSyncer($identifier, $password);
+        $syncerId = isset($syncer['id']) ? (string) $syncer['id'] : '';
+        if ($syncerId === '') {
+            throw new RuntimeException('Syncer invalide pour création de session.');
+        }
+
+        $session = createHostSessionForSyncer($syncerId, HOST_SESSION_TTL_SECONDS);
+        $sessionId = isset($session['sessionId']) ? (string) $session['sessionId'] : '';
+        if ($sessionId === '') {
+            throw new RuntimeException('Impossible de créer la session host.');
+        }
+        setHostSessionCookie($sessionId);
+
         jsonResponse(200, [
             'message' => 'Connexion réussie.',
             'syncer' => $syncer,
@@ -97,6 +113,10 @@ function handleLoginSyncer(): void
  */
 function handleAddParticipant(string $syncerId): void
 {
+    if (!requireHostSessionForSyncer($syncerId)) {
+        return;
+    }
+
     $payload = parseJsonRequestBody();
     if (!is_array($payload)) {
         return;
@@ -135,6 +155,10 @@ function handleAddParticipant(string $syncerId): void
  */
 function handleDeleteParticipant(string $syncerId, string $participantId): void
 {
+    if (!requireHostSessionForSyncer($syncerId)) {
+        return;
+    }
+
     try {
         $syncer = deleteParticipantFromSyncer($syncerId, $participantId);
         jsonResponse(200, [
@@ -165,6 +189,10 @@ function handleDeleteParticipant(string $syncerId, string $participantId): void
  */
 function handleConfigureEventPeriod(string $syncerId): void
 {
+    if (!requireHostSessionForSyncer($syncerId)) {
+        return;
+    }
+
     $payload = parseJsonRequestBody();
     if (!is_array($payload)) {
         return;
@@ -203,6 +231,10 @@ function handleConfigureEventPeriod(string $syncerId): void
  */
 function handleGetSyncerDetails(string $syncerId): void
 {
+    if (!requireHostSessionForSyncer($syncerId)) {
+        return;
+    }
+
     try {
         $syncer = getSyncerDetails($syncerId);
         jsonResponse(200, [
@@ -395,5 +427,86 @@ function jsonResponse(int $statusCode, array $body): void
 {
     http_response_code($statusCode);
     echo json_encode($body, JSON_UNESCAPED_UNICODE);
+}
+
+/**
+ * Vérifie qu'une session host valide autorise l'accès à ce Syncer.
+ *
+ * @param string $syncerId Identifiant du Syncer ciblé.
+ *
+ * @return bool true si autorisé, false sinon.
+ */
+function requireHostSessionForSyncer(string $syncerId): bool
+{
+    $sessionId = isset($_COOKIE[HOST_SESSION_COOKIE_NAME]) ? (string) $_COOKIE[HOST_SESSION_COOKIE_NAME] : '';
+    if ($sessionId === '') {
+        jsonResponse(401, [
+            'error' => 'Authentification host requise.',
+        ]);
+        return false;
+    }
+
+    $session = getHostSessionById($sessionId);
+    if (!is_array($session)) {
+        clearHostSessionCookie();
+        jsonResponse(401, [
+            'error' => 'Session host expirée ou invalide.',
+        ]);
+        return false;
+    }
+
+    $sessionSyncerId = isset($session['syncerId']) ? (string) $session['syncerId'] : '';
+    if ($sessionSyncerId !== $syncerId) {
+        jsonResponse(403, [
+            'error' => 'Accès refusé pour ce Syncer.',
+        ]);
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Définit le cookie HttpOnly de session host.
+ *
+ * @param string $sessionId Identifiant de session host.
+ */
+function setHostSessionCookie(string $sessionId): void
+{
+    setcookie(HOST_SESSION_COOKIE_NAME, $sessionId, [
+        'expires' => time() + HOST_SESSION_TTL_SECONDS,
+        'path' => '/',
+        'secure' => isHttpsRequest(),
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+}
+
+/**
+ * Supprime le cookie de session host côté navigateur.
+ */
+function clearHostSessionCookie(): void
+{
+    setcookie(HOST_SESSION_COOKIE_NAME, '', [
+        'expires' => time() - 3600,
+        'path' => '/',
+        'secure' => isHttpsRequest(),
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+}
+
+/**
+ * Détecte si la requête courante passe en HTTPS.
+ */
+function isHttpsRequest(): bool
+{
+    $https = isset($_SERVER['HTTPS']) ? (string) $_SERVER['HTTPS'] : '';
+    if ($https !== '' && strtolower($https) !== 'off') {
+        return true;
+    }
+
+    $forwardedProto = isset($_SERVER['HTTP_X_FORWARDED_PROTO']) ? (string) $_SERVER['HTTP_X_FORWARDED_PROTO'] : '';
+    return strtolower($forwardedProto) === 'https';
 }
 

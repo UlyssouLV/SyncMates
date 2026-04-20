@@ -27,3 +27,13 @@ function expiresInHoursIso8601(int $hours): string
     return gmdate('c', time() + ($hours * 3600));
 }
 
+/**
+ * Retourne une date d'expiration en ajoutant N secondes.
+ *
+ * @param int $seconds Nombre de secondes à ajouter à maintenant.
+ */
+function expiresInSecondsIso8601(int $seconds): string
+{
+    return gmdate('c', time() + $seconds);
+}
+

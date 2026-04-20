@@ -33,3 +33,11 @@ function generateParticipantId(): string
     return 'p_' . bin2hex(random_bytes(6));
 }
 
+/**
+ * Génère un identifiant de session host.
+ */
+function generateHostSessionId(): string
+{
+    return 'hs_' . bin2hex(random_bytes(24));
+}
+
