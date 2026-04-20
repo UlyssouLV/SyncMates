@@ -147,57 +147,34 @@ La sécurité est incluse dès la V1 (pas reportée).
 
 ---
 
-## API cible (V1)
-
----
-
-## Ordre de développement recommandé
-
-1. **Backend minimal + stockage JSON**
-   - création Syncer
-   - ajout participants
-   - sauvegarde/lecture JSON
-2. **Couche sécurité**
-   - login host + session serveur
-   - cookie de session sécurisé (`HttpOnly`, `Secure`, `SameSite`)
-   - contrôle d'accès host/participant
-3. **Saisie des indisponibilités**
-   - endpoint participant
-   - validation des dates
-4. **Moteur de calcul**
-   - score de disponibilité par date
-   - endpoint de résultats
-5. **Pages HTML simples**
-   - création Syncer
-   - connexion host
-   - sélection participant
-   - affichage résultat
-6. **Expiration 48h**
-   - contrôle à la lecture
-   - nettoyage automatique manuel/planifié
-
----
 
 ## État actuel du projet
 
 - Nom du repo défini : `SyncMates`
 - Branche de travail créée : `1.0.0`
 - Vision produit V1 clarifiée dans ce README
+- Arborescence backend/frontend créée (`public`, `src`, `data`)
+- Route API de création de Syncer implémentée : `POST /api/syncers`
+- Stockage JSON opérationnel avec 1 fichier par Syncer (`data/syncers/{id}.json`)
+- Validation de création en place (champs requis + JSON + Content-Type)
+- Règle anti-doublon implémentée sur l'association `name + password`
+- Formulaire "Créer un Syncer" branché côté frontend (`public/host.html` -> `public/js/host.js`)
+- Routage Apache API en place via `public/.htaccess`
 
 ---
 
 ## Reste à développer (checklist V1.0.0)
 
-- [ ] Initialiser le projet PHP (`public`, `src`, `data`, `.htaccess`)
-- [ ] Créer l'architecture dossiers `public`, `src`, `data`
-- [ ] Implémenter le stockage JSON robuste (1 fichier par Syncer + lecture/écriture atomique)
-- [ ] Créer endpoints Syncer + participants
+- [x] Initialiser le projet PHP (`public`, `src`, `data`, `.htaccess`)
+- [x] Créer l'architecture dossiers `public`, `src`, `data`
+- [x] Implémenter le stockage JSON robuste (1 fichier par Syncer + lecture/écriture atomique)
+- [ ] Compléter les endpoints Syncer + participants
 - [ ] Implémenter auth host (mot de passe hashé + login + logout)
 - [ ] Implémenter sessions serveur + cookie `HttpOnly`/`Secure`/`SameSite`
 - [ ] Protéger les endpoints host par vérification de session
 - [ ] Créer saisie d'indisponibilités côté participant
 - [ ] Implémenter calcul "meilleures dates"
-- [ ] Créer pages HTML de base (sans style avancé)
+- [ ] Finaliser les pages HTML de base (sans style avancé)
 - [ ] Gérer expiration 48h
 - [ ] Ajouter validation d'entrées et gestion d'erreurs
 

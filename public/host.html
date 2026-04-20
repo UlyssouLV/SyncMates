@@ -7,7 +7,7 @@
   </head>
   <body>
     <main>
-      <h1>Connexion host</h1>
+      <h1>Connexion Syncer</h1>
       <p>
         Connecte-toi à ton Syncer pour gérer les participants et consulter les
         disponibilités.
@@ -31,18 +31,44 @@
             id="syncer-password"
             name="syncerPassword"
             type="password"
-            required
-            minlength="8"
-            autocomplete="current-password"
           />
         </div>
 
         <button type="submit">Se connecter</button>
       </form>
 
+      <section>
+        <h2>Créer un Syncer</h2>
+        <form id="create-syncer-form" method="post" action="#">
+          <div>
+            <label for="create-syncer-name">Nom du Syncer</label>
+            <input
+              id="create-syncer-name"
+              name="createSyncerName"
+              type="text"
+            required
+            />
+          </div>
+
+          <div>
+            <label for="create-syncer-password">Mot de passe</label>
+            <input
+              id="create-syncer-password"
+              name="createSyncerPassword"
+              type="password"
+            required
+            />
+          </div>
+
+          <button type="submit">Créer le Syncer</button>
+        </form>
+        <p id="create-syncer-feedback" aria-live="polite"></p>
+      </section>
+
       <p>
         <a href="index.html">Retour à l'accueil</a>
       </p>
     </main>
+    <script src="js/host.js" defer></script>
   </body>
 </html>
