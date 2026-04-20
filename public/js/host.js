@@ -2,7 +2,7 @@
  * Script frontend de la page host.
  *
  * Ce fichier gère:
- * - le formulaire de connexion Syncer,
+ * - le formulaire de connexion synchroniseur,
  * - récupération des champs utilisateur,
  * - appel des API de connexion et de création,
  * - gestion des retours succès/erreur dans l'UI.
@@ -69,28 +69,28 @@ async function postJson(endpoint, payload, actionLabel) {
 }
 
 /**
- * Appelle l'API backend pour créer un nouveau Syncer.
+ * Appelle l'API backend pour créer un nouveau synchroniseur.
  *
- * @param {string} name Nom du Syncer.
- * @param {string} password Mot de passe du Syncer.
+ * @param {string} name Nom du synchroniseur.
+ * @param {string} password Mot de passe du synchroniseur.
  * @returns {Promise<Object>} Réponse JSON du backend.
  */
 async function createSyncer(name, password) {
-  return postJson("/api/syncers", { name, password }, "création Syncer");
+  return postJson("/api/syncers", { name, password }, "création synchroniseur");
 }
 
 /**
- * Appelle l'API backend pour connecter un host à un Syncer existant.
+ * Appelle l'API backend pour connecter un hôte à un synchroniseur existant.
  *
- * @param {string} identifier Nom ou identifiant du Syncer.
- * @param {string} password Mot de passe du Syncer.
+ * @param {string} identifier Nom ou identifiant du synchroniseur.
+ * @param {string} password Mot de passe du synchroniseur.
  * @returns {Promise<Object>} Réponse JSON du backend.
  */
 async function loginSyncer(identifier, password) {
   return postJson(
     "/api/syncers/login",
     { identifier, password },
-    "connexion Syncer"
+    "connexion synchroniseur"
   );
 }
 
@@ -162,7 +162,7 @@ if (createSyncerForm) {
       // Retour visuel en succès + reset du formulaire.
       setFeedback(
         createSyncerFeedbackElement,
-        `Syncer créé avec succès. ID: ${syncerId}`,
+        `Synchroniseur créé avec succès. ID: ${syncerId}`,
         false
       );
       createSyncerForm.reset();

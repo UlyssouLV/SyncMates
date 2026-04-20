@@ -1,0 +1,31 @@
+.page-syncer #participants-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.page-syncer #participants-list li {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.page-syncer #share-link-button {
+  background: #1f8f5f;
+}
+
+.page-syncer #share-link-button:hover {
+  background: #18724c;
+}
+
+.page-syncer .prolonger-hint {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  cursor: help;
+  background: #fff;
+}

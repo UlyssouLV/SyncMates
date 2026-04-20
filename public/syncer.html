@@ -3,20 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SyncMates - Syncer</title>
+    <title>SyncMates - Synchroniseur</title>
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="css/pages/syncer.css" />
   </head>
-  <body>
+  <body class="page-syncer">
     <main>
-      <h1 id="syncer-title">Syncer</h1>
+      <h1 id="syncer-title">Synchroniseur</h1>
       <p id="syncer-description">
-        Espace de gestion du Syncer connecté.
+        Espace de gestion du synchroniseur connecté.
       </p>
 
       <section>
         <h2>Informations</h2>
-        <p><strong>ID:</strong> <span id="syncer-id">-</span></p>
         <p><strong>Nom:</strong> <span id="syncer-name">-</span></p>
-        <p><strong>Expire le:</strong> <span id="syncer-expires-at">-</span></p>
+        <p>
+          <strong>Expire le:</strong> <span id="syncer-expires-at">-</span>
+          <span
+            class="prolonger-hint"
+            title="Fonctionnalité payante à venir pour financer le projet gratuit."
+            >Prolonger ?</span
+          >
+        </p>
         <p>
           <strong>Plage de l'évènement:</strong>
           <span id="syncer-event-period">Non configurée</span>
@@ -65,7 +73,7 @@
         <p id="share-link-feedback" aria-live="polite"></p>
       </section>
 
-      <p><a href="host.html">Retour a la connexion Syncer</a></p>
+      <p><a href="host.html">Retour à la connexion synchroniseur</a></p>
     </main>
 
     <script src="js/maintenance.js" defer></script>

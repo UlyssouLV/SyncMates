@@ -1,0 +1,18 @@
+.page-participant #participant-select {
+  max-width: 360px;
+}
+
+.page-participant #unavailable-dates-preview {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.page-participant #clear-unavailabilities-button {
+  background: #58627a;
+}
+
+.page-participant #clear-unavailabilities-button:hover {
+  background: #3f475c;
+}

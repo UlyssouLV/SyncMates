@@ -4,23 +4,44 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SyncMates - Accueil</title>
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="css/pages/index.css" />
   </head>
-  <body>
+  <body class="page-index">
     <main>
       <h1>SyncMates</h1>
-      <p>
-        Organise facilement une date commune avec tes proches en centralisant
-        les indisponibilités de chacun.
-      </p>
+      <div class="event-banner" aria-label="Exemples d'événements à organiser">
+        <article class="event-card event-card-bbq">
+          <span>Barbecue entre amis</span>
+        </article>
+        <article class="event-card event-card-pool">
+          <span>Journée piscine</span>
+        </article>
+        <article class="event-card event-card-hike">
+          <span>Randonnée du week-end</span>
+        </article>
+      </div>
+
+      <section class="value-prop">
+        <h2>SyncMates, un outil gratuit pour trouver la date parfaite</h2>
+        <p>
+          Ça vous est jamais arrivé de vouloir organiser quelque chose avec vos amis, sauf qu'il y
+          en a toujours un qui n'est pas là ?
+        </p>
+        <p>
+          SyncMates permet de visualiser facilement les disponibilités de chacun et de convenir
+          d'une date qui arrange le plus de monde !
+        </p>
+      </section>
 
       <section>
         <h2>Espace host</h2>
         <p>
-          Crée un nouveau Syncer ou connecte-toi à un Syncer existant pour gérer
+          Crée un nouveau synchroniseur ou connecte-toi à un synchroniseur existant pour gérer
           les participants.
         </p>
-        <p>
-          <a href="host.html">Aller à l'authentification host</a>
+        <p class="cta-row">
+          <a class="button-link" href="host.html">Aller à l'authentification host</a>
         </p>
       </section>
     </main>

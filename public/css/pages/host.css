@@ -1,0 +1,19 @@
+.page-host main {
+  max-width: 780px;
+}
+
+.page-host #host-login-form,
+.page-host #create-syncer-form {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.page-host #copy-share-link-button {
+  background: #334155;
+}
+
+.page-host #copy-share-link-button:hover {
+  background: #1f2937;
+}

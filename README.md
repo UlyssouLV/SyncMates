@@ -21,8 +21,8 @@ Objectifs principaux:
 
 ## Fonctionnalités actuelles
 
-### 1) Création de Syncer
-- Créer un Syncer avec `name` + `password`
+### 1) Création de synchroniseur
+- Créer un synchroniseur avec `name` + `password`
 - Générer un identifiant unique
 - Enregistrer une date d'expiration à `now + 48h`
 
@@ -42,7 +42,7 @@ Objectifs principaux:
 - Affichage d'un classement des dates les plus favorables
 
 ### 5) Expiration des données
-- Les Syncers expirés (>48h) ne sont plus exploitables
+- Les synchroniseurs expirés (>48h) ne sont plus exploitables
 - Mécanisme de nettoyage des données expirées (sessions)
 
 ### 6) Hors périmètre (plus tard)
@@ -55,7 +55,7 @@ Objectifs principaux:
 
 - Frontend : HTML + JS + CSS/UX
 - Backend : PHP 8+ (API simple sur hébergement Apache)
-- Stockage : fichiers JSON (pas de base SQL), avec 1 fichier par Syncer
+- Stockage : fichiers JSON (pas de base SQL), avec 1 fichier par synchroniseur
 - Sécurité : sessions serveur + cookie de session `HttpOnly`
 
 ---
@@ -72,6 +72,14 @@ SyncMates/
     syncer.html
     participant.html
     result.html
+    css/
+      app.css
+      pages/
+        index.css
+        host.css
+        syncer.css
+        participant.css
+        result.css
     js/
       maintenance.js
       host.js
@@ -111,7 +119,7 @@ SyncMates/
 
 ## Modèle de données JSON
 
-Chaque Syncer est stocké dans son propre fichier JSON : `data/syncers/{syncerId}.json`
+Chaque synchroniseur est stocké dans son propre fichier JSON : `data/syncers/{syncerId}.json`
 
 ```json
 {
@@ -145,7 +153,7 @@ La sécurité est incluse dans la version actuelle.
 - **Host** : authentification par nom/ID + mot de passe
 - **Session/Cookie** : session serveur JSON (`data/sessions/{sessionId}.json`) + cookie `host_session` (`HttpOnly`, `SameSite=Lax`, `Secure` en HTTPS)
 - **Participants** : accès via lien sécurisé contenant un `shareToken` non prévisible
-- **Contrôle d'accès** : endpoints host protégés par vérification de session + association session/syncer
+- **Contrôle d'accès** : endpoints host protégés par vérification de session + association session/synchroniseur
 - **Mots de passe** : stockés hashés (`password_hash` / `password_verify` en PHP)
 - **Protection API** : validation stricte des entrées et vérification systématique de l'expiration 48h
 
@@ -153,10 +161,10 @@ La sécurité est incluse dans la version actuelle.
 
 ## API cible
 
-- `POST /api/syncers` : créer un Syncer
-- `POST /api/syncers/login` : connexion host à un Syncer existant
-- `GET /api/syncers/{id}` : récupérer les détails d'un Syncer
-- `GET /api/syncers/{id}/participants` : récupérer les profils participants d'un Syncer
+- `POST /api/syncers` : créer un synchroniseur
+- `POST /api/syncers/login` : connexion host à un synchroniseur existant
+- `GET /api/syncers/{id}` : récupérer les détails d'un synchroniseur
+- `GET /api/syncers/{id}/participants` : récupérer les profils participants d'un synchroniseur
 - `POST /api/syncers/{id}/participants` : ajouter un participant
 - `DELETE /api/syncers/{id}/participants/{participantId}` : supprimer un participant
 - `GET /api/syncers/{id}/participants/{participantId}/unavailabilities` : charger les indisponibilités d'un participant
@@ -169,13 +177,13 @@ La sécurité est incluse dans la version actuelle.
 
 ## Reste à développer (checklist 1.0.1)
 
-- [ ] Créer une feuille de style globale (`public/css/app.css`)
-- [ ] Brancher la feuille de style sur `index.html`, `host.html`, `syncer.html`, `participant.html`, `result.html`
-- [ ] Définir une charte visuelle simple (couleurs, typo, espacements, bordures, ombres)
-- [ ] Uniformiser les composants (boutons, champs, labels, sections, cartes)
-- [ ] Améliorer le rendu des formulaires (alignements, états focus, messages d'erreur/succès)
-- [ ] Améliorer le rendu des listes participants et du tableau de résultats
-- [ ] Structurer une grille responsive de base (mobile/tablette/desktop)
+- [x] Créer une feuille de style globale (`public/css/app.css`)
+- [x] Brancher la feuille de style sur `index.html`, `host.html`, `syncer.html`, `participant.html`, `result.html`
+- [x] Définir une charte visuelle simple (couleurs, typo, espacements, bordures, ombres)
+- [x] Uniformiser les composants (boutons, champs, labels, sections, cartes)
+- [x] Améliorer le rendu des formulaires (alignements, états focus, messages d'erreur/succès)
+- [x] Améliorer le rendu des listes participants et du tableau de résultats
+- [x] Structurer une grille responsive de base (mobile/tablette/desktop)
 - [ ] Vérifier la cohérence visuelle et l'accessibilité de base (contraste, lisibilité, focus visible)
 - [ ] Nettoyer les éléments temporaires ou incohérents de l'UI (textes, sections, placeholders)
 

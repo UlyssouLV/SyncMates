@@ -1,7 +1,7 @@
 /**
  * Script frontend de la page syncer.
  *
- * Ce fichier initialise un affichage minimal du Syncer apres connexion.
+ * Ce fichier initialise un affichage minimal du synchroniseur après connexion.
  * Il permet aussi l'ajout d'un participant via l'API backend.
  */
 
@@ -29,6 +29,41 @@ function setTextById(elementId, value) {
   }
 
   element.textContent = value;
+}
+
+/**
+ * Formate une date ISO en texte lisible pour un humain.
+ *
+ * @param {string} isoDate Date ISO source.
+ * @returns {string} Date formatée en français ou valeur d'origine.
+ */
+function formatHumanDateTime(isoDate) {
+  const value = String(isoDate || "").trim();
+  if (!value) {
+    return "-";
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  if (isDateOnly) {
+    return parsed.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  }
+
+  return parsed.toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 /**
@@ -168,11 +203,11 @@ function renderEventPeriod(eventStartDate, eventEndDate) {
     return;
   }
 
-  periodElement.textContent = `Du ${eventStartDate} au ${eventEndDate}`;
+  periodElement.textContent = `Du ${formatHumanDateTime(eventStartDate)} au ${formatHumanDateTime(eventEndDate)}`;
 }
 
 /**
- * Pré-remplit le formulaire de période depuis les données Syncer.
+ * Pré-remplit le formulaire de période depuis les données synchroniseur.
  *
  * @param {string} eventStartDate Date de début.
  * @param {string} eventEndDate Date de fin.
@@ -223,9 +258,9 @@ function renderParticipants(participants) {
 }
 
 /**
- * Charge le détail d'un Syncer depuis l'API.
+ * Charge le détail d'un synchroniseur depuis l'API.
  *
- * @param {string} currentSyncerId Identifiant technique du Syncer.
+ * @param {string} currentSyncerId Identifiant technique du synchroniseur.
  * @returns {Promise<Object>} Réponse JSON de l'API.
  * @throws {Error} Si la réponse API est en erreur.
  */
@@ -250,7 +285,7 @@ async function getSyncerDetails(currentSyncerId) {
     const fallbackMessage = rawResponse ? rawResponse.slice(0, 180) : "";
     const details = backendMessage || fallbackMessage || "Aucun détail serveur.";
     throw buildHttpError(
-      `Erreur chargement Syncer (${response.status} ${response.statusText}) - ${details}`,
+      `Erreur chargement synchroniseur (${response.status} ${response.statusText}) - ${details}`,
       response.status
     );
   }
@@ -261,7 +296,7 @@ async function getSyncerDetails(currentSyncerId) {
 /**
  * Appelle l'API d'ajout de participant.
  *
- * @param {string} currentSyncerId Identifiant technique du Syncer.
+ * @param {string} currentSyncerId Identifiant technique du synchroniseur.
  * @param {string} participantName Nom du participant.
  * @returns {Promise<Object>} Réponse JSON de l'API.
  * @throws {Error} Si la réponse API est en erreur.
@@ -301,7 +336,7 @@ async function addParticipant(currentSyncerId, participantName) {
 /**
  * Appelle l'API de suppression de participant.
  *
- * @param {string} currentSyncerId Identifiant technique du Syncer.
+ * @param {string} currentSyncerId Identifiant technique du synchroniseur.
  * @param {string} participantId Identifiant du participant à supprimer.
  * @returns {Promise<Object>} Réponse JSON de l'API.
  * @throws {Error} Si la réponse API est en erreur.
@@ -341,9 +376,9 @@ async function deleteParticipant(currentSyncerId, participantId) {
 }
 
 /**
- * Configure la plage de dates de l'évènement pour le Syncer.
+ * Configure la plage de dates de l'évènement pour le synchroniseur.
  *
- * @param {string} currentSyncerId Identifiant technique du Syncer.
+ * @param {string} currentSyncerId Identifiant technique du synchroniseur.
  * @param {string} eventStartDate Date de début (YYYY-MM-DD).
  * @param {string} eventEndDate Date de fin (YYYY-MM-DD).
  * @returns {Promise<Object>} Réponse JSON de l'API.
@@ -390,17 +425,13 @@ const shareTokenFromUrl = getQueryParam("token");
 const shareLinkButton = document.getElementById("share-link-button");
 let currentShareLink = "";
 
-if (syncerId) {
-  setTextById("syncer-id", syncerId);
-}
-
 if (syncerName) {
   setTextById("syncer-name", syncerName);
-  setTextById("syncer-title", `Syncer - ${syncerName}`);
+  setTextById("syncer-title", `Synchroniseur - ${syncerName}`);
 }
 
 if (syncerExpiresAt) {
-  setTextById("syncer-expires-at", syncerExpiresAt);
+  setTextById("syncer-expires-at", formatHumanDateTime(syncerExpiresAt));
 }
 
 if (syncerId) {
@@ -415,10 +446,10 @@ if (syncerId) {
       // Si certaines infos manquent dans l'URL, on complète depuis l'API.
       if (!syncerName && syncer.name) {
         setTextById("syncer-name", String(syncer.name));
-        setTextById("syncer-title", `Syncer - ${String(syncer.name)}`);
+        setTextById("syncer-title", `Synchroniseur - ${String(syncer.name)}`);
       }
       if (!syncerExpiresAt && syncer.expiresAt) {
-        setTextById("syncer-expires-at", String(syncer.expiresAt));
+        setTextById("syncer-expires-at", formatHumanDateTime(String(syncer.expiresAt)));
       }
 
       const shareToken = String(syncer.shareToken || shareTokenFromUrl || "");
@@ -450,7 +481,7 @@ if (addParticipantForm) {
 
     if (!syncerId) {
       setAddParticipantFeedback(
-        "Impossible d'ajouter un participant sans identifiant de Syncer.",
+        "Impossible d'ajouter un participant sans identifiant de synchroniseur.",
         true
       );
       return;
@@ -490,7 +521,7 @@ if (eventPeriodForm) {
 
     if (!syncerId) {
       setEventPeriodFeedback(
-        "Impossible de configurer la période sans identifiant de Syncer.",
+        "Impossible de configurer la période sans identifiant de synchroniseur.",
         true
       );
       return;

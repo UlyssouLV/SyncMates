@@ -36,6 +36,30 @@ function setTextById(elementId, value) {
 }
 
 /**
+ * Formate une date ISO en texte lisible.
+ *
+ * @param {string} isoDate Date ISO source.
+ * @returns {string} Date formatée en français ou valeur brute.
+ */
+function formatHumanDate(isoDate) {
+  const value = String(isoDate || "").trim();
+  if (!value) {
+    return "-";
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return parsed.toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+/**
  * Affiche un feedback dans la section sélection de profil.
  *
  * @param {string} message Message utilisateur.
@@ -140,7 +164,10 @@ function renderSyncerPeriod(eventStartDate, eventEndDate) {
     return;
   }
 
-  setTextById("syncer-period", `Du ${eventStartDate} au ${eventEndDate}`);
+  setTextById(
+    "syncer-period",
+    `Du ${formatHumanDate(eventStartDate)} au ${formatHumanDate(eventEndDate)}`
+  );
 }
 
 /**

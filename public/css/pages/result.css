@@ -1,0 +1,14 @@
+.page-result #best-dates-list {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 18px;
+}
+
+.page-result #refresh-results-button {
+  background: #2f6fbe;
+}
+
+.page-result #refresh-results-button:hover {
+  background: #245894;
+}
