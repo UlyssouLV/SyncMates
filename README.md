@@ -129,6 +129,8 @@ Chaque Syncer est stocké dans son propre fichier JSON : `data/syncers/{syncerId
       "unavailableDates": ["2026-04-24", "2026-04-25"]
     }
   ],
+  "eventStartDate": "2026-05-01",
+  "eventEndDate": "2026-06-30",
   "createdAt": "2026-04-20T10:00:00.000Z",
   "expiresAt": "2026-04-22T10:00:00.000Z",
   "shareToken": "token_123"
@@ -157,6 +159,7 @@ La sécurité est incluse dès la V1 (pas reportée).
 - `GET /api/syncers/{id}` : récupérer les détails d'un Syncer
 - `POST /api/syncers/{id}/participants` : ajouter un participant
 - `DELETE /api/syncers/{id}/participants/{participantId}` : supprimer un participant
+- `PATCH /api/syncers/{id}/event-period` : configurer la plage de l'évènement
 
 ---
 
@@ -177,8 +180,10 @@ La sécurité est incluse dès la V1 (pas reportée).
 - Route API de détail Syncer implémentée : `GET /api/syncers/{id}`
 - Route API d'ajout participant implémentée : `POST /api/syncers/{id}/participants`
 - Route API de suppression participant implémentée : `DELETE /api/syncers/{id}/participants/{participantId}`
+- Route API de configuration de période implémentée : `PATCH /api/syncers/{id}/event-period`
 - Page `syncer.html` branchée avec chargement automatique des participants au refresh
 - Suppression participant disponible côté UI via bouton "Supprimer"
+- Configuration de période disponible côté UI (`date début` / `date fin`)
 - Routage Apache API en place via `public/.htaccess`
 
 ---
@@ -189,6 +194,7 @@ La sécurité est incluse dès la V1 (pas reportée).
 - [x] Créer l'architecture dossiers `public`, `src`, `data`
 - [x] Implémenter le stockage JSON robuste (1 fichier par Syncer + lecture/écriture atomique)
 - [ ] Compléter les endpoints Syncer + participants (mise à jour indisponibilités, résultats)
+- [ ] Exploiter `eventStartDate` / `eventEndDate` dans la saisie et l'analyse des indisponibilités
 - [ ] Finaliser auth host (session serveur sécurisée)
 - [ ] Implémenter sessions serveur + cookie `HttpOnly`/`Secure`/`SameSite`
 - [ ] Protéger les endpoints host par vérification de session

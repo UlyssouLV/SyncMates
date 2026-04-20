@@ -65,6 +65,8 @@ function createSyncer(string $name, string $password): array
             'name' => 'Host',
         ],
         'participants' => [],
+        'eventStartDate' => null,
+        'eventEndDate' => null,
         'createdAt' => nowIso8601(),
         'expiresAt' => expiresInHoursIso8601(48),
         'shareToken' => generateShareToken(),
@@ -241,5 +243,63 @@ function deleteParticipantFromSyncer(string $syncerId, string $participantId): a
 
     unset($syncer['passwordHash']);
     return $syncer;
+}
+
+/**
+ * Configure la plage de dates d'un Syncer (fenêtre de l'évènement).
+ *
+ * @param string $syncerId       Identifiant technique du Syncer.
+ * @param string $eventStartDate Date de début au format YYYY-MM-DD.
+ * @param string $eventEndDate   Date de fin au format YYYY-MM-DD.
+ *
+ * @return array Syncer mis à jour, sans passwordHash.
+ *
+ * @throws InvalidArgumentException Si les dates sont invalides.
+ * @throws DomainException          Si le Syncer est introuvable.
+ */
+function configureSyncerEventPeriod(string $syncerId, string $eventStartDate, string $eventEndDate): array
+{
+    $trimmedSyncerId = trim($syncerId);
+    $trimmedStartDate = trim($eventStartDate);
+    $trimmedEndDate = trim($eventEndDate);
+
+    if ($trimmedSyncerId === '') {
+        throw new InvalidArgumentException('L\'identifiant du Syncer est requis.');
+    }
+
+    if (!isValidIsoDate($trimmedStartDate) || !isValidIsoDate($trimmedEndDate)) {
+        throw new InvalidArgumentException('Les dates doivent être au format YYYY-MM-DD.');
+    }
+
+    if ($trimmedStartDate > $trimmedEndDate) {
+        throw new InvalidArgumentException('La date de début doit être antérieure ou égale à la date de fin.');
+    }
+
+    $syncer = getSyncerById($trimmedSyncerId);
+    if (!is_array($syncer)) {
+        throw new DomainException('Syncer introuvable.');
+    }
+
+    $syncer['eventStartDate'] = $trimmedStartDate;
+    $syncer['eventEndDate'] = $trimmedEndDate;
+    saveSyncer($syncer);
+
+    unset($syncer['passwordHash']);
+    return $syncer;
+}
+
+/**
+ * Vérifie qu'une date respecte strictement le format YYYY-MM-DD.
+ *
+ * @param string $date Date à valider.
+ */
+function isValidIsoDate(string $date): bool
+{
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        return false;
+    }
+
+    [$year, $month, $day] = array_map('intval', explode('-', $date));
+    return checkdate($month, $day, $year);
 }
 

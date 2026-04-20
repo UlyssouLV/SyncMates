@@ -48,6 +48,59 @@ function setAddParticipantFeedback(message, isError) {
 }
 
 /**
+ * Affiche un feedback textuel pour la configuration de période.
+ *
+ * @param {string} message Message utilisateur.
+ * @param {boolean} isError Indique si le message est une erreur.
+ */
+function setEventPeriodFeedback(message, isError) {
+  const feedbackElement = document.getElementById("event-period-feedback");
+  if (!feedbackElement) {
+    return;
+  }
+
+  feedbackElement.textContent = message;
+  feedbackElement.style.color = isError ? "crimson" : "green";
+}
+
+/**
+ * Met à jour l'affichage de la période d'évènement.
+ *
+ * @param {string} eventStartDate Date de début.
+ * @param {string} eventEndDate Date de fin.
+ */
+function renderEventPeriod(eventStartDate, eventEndDate) {
+  const periodElement = document.getElementById("syncer-event-period");
+  if (!periodElement) {
+    return;
+  }
+
+  if (!eventStartDate || !eventEndDate) {
+    periodElement.textContent = "Non configurée";
+    return;
+  }
+
+  periodElement.textContent = `Du ${eventStartDate} au ${eventEndDate}`;
+}
+
+/**
+ * Pré-remplit le formulaire de période depuis les données Syncer.
+ *
+ * @param {string} eventStartDate Date de début.
+ * @param {string} eventEndDate Date de fin.
+ */
+function hydrateEventPeriodForm(eventStartDate, eventEndDate) {
+  const startInput = document.getElementById("event-start-date");
+  const endInput = document.getElementById("event-end-date");
+  if (!(startInput instanceof HTMLInputElement) || !(endInput instanceof HTMLInputElement)) {
+    return;
+  }
+
+  startInput.value = eventStartDate || "";
+  endInput.value = eventEndDate || "";
+}
+
+/**
  * Rend la liste des participants dans l'interface.
  *
  * @param {Array<Object>} participants Liste de participants.
@@ -196,6 +249,47 @@ async function deleteParticipant(currentSyncerId, participantId) {
   return data;
 }
 
+/**
+ * Configure la plage de dates de l'évènement pour le Syncer.
+ *
+ * @param {string} currentSyncerId Identifiant technique du Syncer.
+ * @param {string} eventStartDate Date de début (YYYY-MM-DD).
+ * @param {string} eventEndDate Date de fin (YYYY-MM-DD).
+ * @returns {Promise<Object>} Réponse JSON de l'API.
+ * @throws {Error} Si la réponse API est en erreur.
+ */
+async function configureEventPeriod(currentSyncerId, eventStartDate, eventEndDate) {
+  const response = await fetch(`/api/syncers/${encodeURIComponent(currentSyncerId)}/event-period`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      eventStartDate,
+      eventEndDate,
+    }),
+  });
+
+  const rawResponse = await response.text();
+  let data = {};
+  try {
+    data = rawResponse ? JSON.parse(rawResponse) : {};
+  } catch (_parseError) {
+    data = {};
+  }
+
+  if (!response.ok) {
+    const backendMessage = data.error || "";
+    const fallbackMessage = rawResponse ? rawResponse.slice(0, 180) : "";
+    const details = backendMessage || fallbackMessage || "Aucun détail serveur.";
+    throw new Error(
+      `Erreur configuration période (${response.status} ${response.statusText}) - ${details}`
+    );
+  }
+
+  return data;
+}
+
 // Initialisation de base depuis les params URL.
 const syncerId = getQueryParam("id");
 const syncerName = getQueryParam("name");
@@ -220,6 +314,8 @@ if (syncerId) {
       const syncer = result?.syncer || {};
       const participants = Array.isArray(syncer.participants) ? syncer.participants : [];
       renderParticipants(participants);
+      renderEventPeriod(String(syncer.eventStartDate || ""), String(syncer.eventEndDate || ""));
+      hydrateEventPeriodForm(String(syncer.eventStartDate || ""), String(syncer.eventEndDate || ""));
 
       // Si certaines infos manquent dans l'URL, on complète depuis l'API.
       if (!syncerName && syncer.name) {
@@ -238,6 +334,7 @@ if (syncerId) {
 
 // Gestion du formulaire d'ajout de participant.
 const addParticipantForm = document.getElementById("add-participant-form");
+const eventPeriodForm = document.getElementById("event-period-form");
 const participantsList = document.getElementById("participants-list");
 if (addParticipantForm) {
   addParticipantForm.addEventListener("submit", async (event) => {
@@ -272,6 +369,44 @@ if (addParticipantForm) {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
       setAddParticipantFeedback(message, true);
+    }
+  });
+}
+
+if (eventPeriodForm) {
+  eventPeriodForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!syncerId) {
+      setEventPeriodFeedback(
+        "Impossible de configurer la période sans identifiant de Syncer.",
+        true
+      );
+      return;
+    }
+
+    const formData = new FormData(eventPeriodForm);
+    const eventStartDate = String(formData.get("eventStartDate") || "").trim();
+    const eventEndDate = String(formData.get("eventEndDate") || "").trim();
+
+    if (!eventStartDate || !eventEndDate) {
+      setEventPeriodFeedback("La date de début et la date de fin sont requises.", true);
+      return;
+    }
+
+    setEventPeriodFeedback("Enregistrement en cours...", false);
+
+    try {
+      const result = await configureEventPeriod(syncerId, eventStartDate, eventEndDate);
+      const syncer = result?.syncer || {};
+      const start = String(syncer.eventStartDate || eventStartDate);
+      const end = String(syncer.eventEndDate || eventEndDate);
+      renderEventPeriod(start, end);
+      hydrateEventPeriodForm(start, end);
+      setEventPeriodFeedback("Période configurée avec succès.", false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erreur inconnue.";
+      setEventPeriodFeedback(message, true);
     }
   });
 }

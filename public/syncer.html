@@ -17,6 +17,26 @@
         <p><strong>ID:</strong> <span id="syncer-id">-</span></p>
         <p><strong>Nom:</strong> <span id="syncer-name">-</span></p>
         <p><strong>Expire le:</strong> <span id="syncer-expires-at">-</span></p>
+        <p>
+          <strong>Plage de l'évènement:</strong>
+          <span id="syncer-event-period">Non configurée</span>
+        </p>
+      </section>
+
+      <section>
+        <h2>Configurer la période de l'évènement</h2>
+        <form id="event-period-form" method="post" action="#">
+          <div>
+            <label for="event-start-date">Date de début</label>
+            <input id="event-start-date" name="eventStartDate" type="date" required />
+          </div>
+          <div>
+            <label for="event-end-date">Date de fin</label>
+            <input id="event-end-date" name="eventEndDate" type="date" required />
+          </div>
+          <button type="submit">Enregistrer la période</button>
+        </form>
+        <p id="event-period-feedback" aria-live="polite"></p>
       </section>
 
       <section>

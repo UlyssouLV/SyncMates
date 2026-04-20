@@ -157,6 +157,44 @@ function handleDeleteParticipant(string $syncerId, string $participantId): void
 }
 
 /**
+ * Traite PATCH /api/syncers/{id}/event-period.
+ *
+ * Configure la plage de dates de l'évènement pour le Syncer.
+ *
+ * @param string $syncerId Identifiant technique du Syncer.
+ */
+function handleConfigureEventPeriod(string $syncerId): void
+{
+    $payload = parseJsonRequestBody();
+    if (!is_array($payload)) {
+        return;
+    }
+
+    $eventStartDate = isset($payload['eventStartDate']) ? (string) $payload['eventStartDate'] : '';
+    $eventEndDate = isset($payload['eventEndDate']) ? (string) $payload['eventEndDate'] : '';
+
+    try {
+        $syncer = configureSyncerEventPeriod($syncerId, $eventStartDate, $eventEndDate);
+        jsonResponse(200, [
+            'message' => 'Période de l\'évènement configurée.',
+            'syncer' => $syncer,
+        ]);
+    } catch (InvalidArgumentException $exception) {
+        jsonResponse(400, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (DomainException $exception) {
+        jsonResponse(404, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (Throwable $exception) {
+        jsonResponse(500, [
+            'error' => 'Erreur serveur lors de la configuration de la période.',
+        ]);
+    }
+}
+
+/**
  * Traite GET /api/syncers/{id}.
  *
  * Renvoie le détail public du Syncer, incluant la liste des participants.

@@ -29,6 +29,8 @@ $addParticipantMatches = [];
 $isAddParticipantRoute = preg_match('#^/api/syncers/([^/]+)/participants$#', $normalizedPath, $addParticipantMatches) === 1;
 $deleteParticipantMatches = [];
 $isDeleteParticipantRoute = preg_match('#^/api/syncers/([^/]+)/participants/([^/]+)$#', $normalizedPath, $deleteParticipantMatches) === 1;
+$eventPeriodMatches = [];
+$isEventPeriodRoute = preg_match('#^/api/syncers/([^/]+)/event-period$#', $normalizedPath, $eventPeriodMatches) === 1;
 
 // Route: création d'un Syncer.
 if ($isCreateSyncerRoute && $method === 'POST') {
@@ -61,6 +63,13 @@ if ($isDeleteParticipantRoute && $method === 'DELETE') {
     $syncerId = isset($deleteParticipantMatches[1]) ? (string) $deleteParticipantMatches[1] : '';
     $participantId = isset($deleteParticipantMatches[2]) ? (string) $deleteParticipantMatches[2] : '';
     handleDeleteParticipant($syncerId, $participantId);
+    exit;
+}
+
+// Route: configuration de la plage de dates de l'évènement.
+if ($isEventPeriodRoute && $method === 'PATCH') {
+    $syncerId = isset($eventPeriodMatches[1]) ? (string) $eventPeriodMatches[1] : '';
+    handleConfigureEventPeriod($syncerId);
     exit;
 }
 
