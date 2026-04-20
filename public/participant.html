@@ -1,1 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SyncMates - Participant</title>
+  </head>
+  <body>
+    <main>
+      <h1>Participer à un Syncer</h1>
+      <p>
+        Sélectionne ton profil puis indique tes dates d'indisponibilité dans la
+        plage définie par le host.
+      </p>
+
+      <section>
+        <h2>Informations Syncer</h2>
+        <p><strong>Nom du Syncer:</strong> <span id="syncer-name">-</span></p>
+        <p><strong>Période:</strong> <span id="syncer-period">-</span></p>
+      </section>
+
+      <section>
+        <h2>Ton profil</h2>
+        <form id="participant-selection-form" method="post" action="#">
+          <div>
+            <label for="participant-select">Choisir mon profil</label>
+            <select id="participant-select" name="participantId" required>
+              <option value="">-- Choisir --</option>
+            </select>
+          </div>
+          <button type="submit">Valider mon profil</button>
+        </form>
+        <p id="participant-selection-feedback" aria-live="polite"></p>
+      </section>
+
+      <section>
+        <h2>Mes indisponibilités</h2>
+        <form id="participant-unavailabilities-form" method="post" action="#">
+          <div>
+            <label for="unavailable-dates">
+              Dates d'indisponibilité (format YYYY-MM-DD, séparées par des
+              virgules)
+            </label>
+            <textarea
+              id="unavailable-dates"
+              name="unavailableDates"
+              rows="6"
+              placeholder="2026-05-10, 2026-05-11"
+              required
+            ></textarea>
+          </div>
+          <button type="submit">Enregistrer mes indisponibilités</button>
+        </form>
+        <p id="participant-unavailabilities-feedback" aria-live="polite"></p>
+      </section>
+
+      <section>
+        <h2>Récapitulatif</h2>
+        <p><strong>Profil sélectionné:</strong> <span id="selected-participant-name">-</span></p>
+        <ul id="unavailable-dates-preview">
+          <li>Aucune indisponibilité enregistrée pour le moment.</li>
+        </ul>
+      </section>
+
+      <p><a href="index.html">Retour à l'accueil</a></p>
+    </main>
+
+    <script src="js/participant.js" defer></script>
+  </body>
+</html>
 

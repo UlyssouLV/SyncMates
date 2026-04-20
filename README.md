@@ -157,6 +157,7 @@ La sécurité est incluse dès la V1 (pas reportée).
 - `POST /api/syncers` : créer un Syncer
 - `POST /api/syncers/login` : connexion host à un Syncer existant
 - `GET /api/syncers/{id}` : récupérer les détails d'un Syncer
+- `GET /api/syncers/{id}/participants` : récupérer les profils participants d'un Syncer
 - `POST /api/syncers/{id}/participants` : ajouter un participant
 - `DELETE /api/syncers/{id}/participants/{participantId}` : supprimer un participant
 - `PATCH /api/syncers/{id}/event-period` : configurer la plage de l'évènement
@@ -178,12 +179,14 @@ La sécurité est incluse dès la V1 (pas reportée).
 - Route API de connexion Syncer implémentée : `POST /api/syncers/login`
 - Formulaire "Connexion Syncer" branché côté frontend avec redirection vers `syncer.html`
 - Route API de détail Syncer implémentée : `GET /api/syncers/{id}`
+- Route API de chargement des profils participants implémentée : `GET /api/syncers/{id}/participants`
 - Route API d'ajout participant implémentée : `POST /api/syncers/{id}/participants`
 - Route API de suppression participant implémentée : `DELETE /api/syncers/{id}/participants/{participantId}`
 - Route API de configuration de période implémentée : `PATCH /api/syncers/{id}/event-period`
 - Page `syncer.html` branchée avec chargement automatique des participants au refresh
 - Suppression participant disponible côté UI via bouton "Supprimer"
 - Configuration de période disponible côté UI (`date début` / `date fin`)
+- Page `participant.html` branchée avec chargement des profils participants dans le select
 - Routage Apache API en place via `public/.htaccess`
 
 ---
@@ -193,7 +196,7 @@ La sécurité est incluse dès la V1 (pas reportée).
 - [x] Initialiser le projet PHP (`public`, `src`, `data`, `.htaccess`)
 - [x] Créer l'architecture dossiers `public`, `src`, `data`
 - [x] Implémenter le stockage JSON robuste (1 fichier par Syncer + lecture/écriture atomique)
-- [ ] Compléter les endpoints Syncer + participants (mise à jour indisponibilités, résultats)
+- [ ] Compléter les endpoints Syncer + participants (enregistrement des indisponibilités, résultats)
 - [ ] Exploiter `eventStartDate` / `eventEndDate` dans la saisie et l'analyse des indisponibilités
 - [ ] Finaliser auth host (session serveur sécurisée)
 - [ ] Implémenter sessions serveur + cookie `HttpOnly`/`Secure`/`SameSite`

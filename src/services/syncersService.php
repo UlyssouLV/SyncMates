@@ -191,6 +191,46 @@ function getSyncerDetails(string $syncerId): array
 }
 
 /**
+ * Retourne les informations nécessaires à la page participant.
+ *
+ * Ce payload permet d'afficher:
+ * - le nom du Syncer,
+ * - la période configurée,
+ * - la liste des profils participants sélectionnables.
+ *
+ * @param string $syncerId Identifiant technique du Syncer.
+ *
+ * @return array Données publiques du Syncer pour la vue participant.
+ *
+ * @throws InvalidArgumentException Si l'identifiant est vide.
+ * @throws DomainException          Si le Syncer n'existe pas.
+ */
+function getSyncerParticipantsPayload(string $syncerId): array
+{
+    $syncer = getSyncerDetails($syncerId);
+
+    $participants = isset($syncer['participants']) && is_array($syncer['participants'])
+        ? $syncer['participants']
+        : [];
+
+    $participantProfiles = [];
+    foreach ($participants as $participant) {
+        $participantProfiles[] = [
+            'id' => isset($participant['id']) ? (string) $participant['id'] : '',
+            'name' => isset($participant['name']) ? (string) $participant['name'] : '',
+        ];
+    }
+
+    return [
+        'id' => isset($syncer['id']) ? (string) $syncer['id'] : '',
+        'name' => isset($syncer['name']) ? (string) $syncer['name'] : '',
+        'eventStartDate' => isset($syncer['eventStartDate']) ? $syncer['eventStartDate'] : null,
+        'eventEndDate' => isset($syncer['eventEndDate']) ? $syncer['eventEndDate'] : null,
+        'participants' => $participantProfiles,
+    ];
+}
+
+/**
  * Supprime un participant d'un Syncer existant.
  *
  * @param string $syncerId      Identifiant technique du Syncer.

@@ -224,6 +224,36 @@ function handleGetSyncerDetails(string $syncerId): void
 }
 
 /**
+ * Traite GET /api/syncers/{id}/participants.
+ *
+ * Renvoie le payload public pour la page participant:
+ * nom du Syncer, période et profils participants disponibles.
+ *
+ * @param string $syncerId Identifiant technique du Syncer.
+ */
+function handleGetSyncerParticipants(string $syncerId): void
+{
+    try {
+        $payload = getSyncerParticipantsPayload($syncerId);
+        jsonResponse(200, [
+            'syncer' => $payload,
+        ]);
+    } catch (InvalidArgumentException $exception) {
+        jsonResponse(400, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (DomainException $exception) {
+        jsonResponse(404, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (Throwable $exception) {
+        jsonResponse(500, [
+            'error' => 'Erreur serveur lors de la récupération des participants.',
+        ]);
+    }
+}
+
+/**
  * Valide et parse un body JSON HTTP.
  *
  * @return array|null Tableau associatif du body JSON, sinon null si erreur.

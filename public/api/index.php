@@ -58,6 +58,13 @@ if ($isAddParticipantRoute && $method === 'POST') {
     exit;
 }
 
+// Route: liste des profils participants d'un Syncer.
+if ($isAddParticipantRoute && $method === 'GET') {
+    $syncerId = isset($addParticipantMatches[1]) ? (string) $addParticipantMatches[1] : '';
+    handleGetSyncerParticipants($syncerId);
+    exit;
+}
+
 // Route: suppression d'un participant d'un Syncer.
 if ($isDeleteParticipantRoute && $method === 'DELETE') {
     $syncerId = isset($deleteParticipantMatches[1]) ? (string) $deleteParticipantMatches[1] : '';
