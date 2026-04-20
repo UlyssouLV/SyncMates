@@ -4,27 +4,22 @@ Mini web app pour organiser facilement une date commune (barbecue, soirée, jour
 
 ---
 
-## Vision Produit (V1.0.0)
+## Vision Produit 1.0.1
 
-Un utilisateur (host) crée un "Syncer" (nom technique temporaire, renommable plus tard) avec :
+La version `1.0.1` est orientée **UI/CSS** pour améliorer le rendu global de la web app tout en conservant le périmètre métier/API actuel.
 
-- un nom de Syncer
-- un mot de passe
+Objectifs principaux:
 
-Le Syncer est stocké pendant une durée limitée (48h en V1).  
-Le host ajoute des participants par leur prénom/nom, puis partage un lien.  
-Les participants sélectionnent leur profil et saisissent leurs dates d'indisponibilité.  
-L'accès participant se fait via le lien de partage (pas via l'accueil).  
-L'application affiche ensuite une vue synthétique :
-
-- indisponibilités de tous
-- plages où le plus de monde est disponible
-
-Objectif V1.0.0 : valider le fonctionnement métier avant le design (HTML simple, CSS minimal).
+- Harmoniser le style global des pages (`index`, `host`, `syncer`, `participant`, `result`)
+- Améliorer la lisibilité (typographie, espacements, hiérarchie visuelle)
+- Améliorer l'ergonomie des formulaires, feedbacks et tableaux
+- Uniformiser les composants (boutons, champs, cartes, sections)
+- Ajouter un responsive de base (mobile/tablette/desktop)
+- Conserver l'intégralité du comportement backend actuel
 
 ---
 
-## Fonctionnalités V1.0.0
+## Fonctionnalités actuelles
 
 ### 1) Création de Syncer
 - Créer un Syncer avec `name` + `password`
@@ -39,7 +34,7 @@ Objectif V1.0.0 : valider le fonctionnement métier avant le design (HTML simple
 ### 3) Accès participant via lien
 - Le participant ouvre le lien
 - Il choisit son profil dans la liste créée par le host
-- Il renseigne ses indisponibilités (jour complet en V1 pour simplifier)
+- Il renseigne ses indisponibilités (jour complet pour simplifier)
 
 ### 4) Visualisation des disponibilités
 - Vue globale des indisponibilités
@@ -50,23 +45,22 @@ Objectif V1.0.0 : valider le fonctionnement métier avant le design (HTML simple
 - Les Syncers expirés (>48h) ne sont plus exploitables
 - Mécanisme de nettoyage des données expirées (sessions)
 
-### 6) Hors périmètre V1 (plus tard)
+### 6) Hors périmètre (plus tard)
 - Paiement 1 EUR pour prolonger 1 mois
-- Design/UI avancé
 - Notifications
 
 ---
 
-## Choix techniques V1
+## Choix techniques
 
-- Frontend : HTML + JS (structure simple, pas de focus CSS)
+- Frontend : HTML + JS + CSS/UX
 - Backend : PHP 8+ (API simple sur hébergement Apache)
-- Stockage : fichiers JSON (pas de base SQL en V1), avec 1 fichier par Syncer
-- Sécurité : sessions serveur + cookie de session `HttpOnly` dès la V1
+- Stockage : fichiers JSON (pas de base SQL), avec 1 fichier par Syncer
+- Sécurité : sessions serveur + cookie de session `HttpOnly`
 
 ---
 
-## Architecture de dossiers proposée
+## Architecture de dossiers 
 
 ```txt
 SyncMates/
@@ -115,7 +109,7 @@ SyncMates/
 
 ---
 
-## Modèle de données JSON (V1)
+## Modèle de données JSON
 
 Chaque Syncer est stocké dans son propre fichier JSON : `data/syncers/{syncerId}.json`
 
@@ -144,9 +138,9 @@ Chaque Syncer est stocké dans son propre fichier JSON : `data/syncers/{syncerId
 
 ---
 
-## Modèle de sécurité V1
+## Modèle de sécurité
 
-La sécurité est incluse dès la V1 (pas reportée).
+La sécurité est incluse dans la version actuelle.
 
 - **Host** : authentification par nom/ID + mot de passe
 - **Session/Cookie** : session serveur JSON (`data/sessions/{sessionId}.json`) + cookie `host_session` (`HttpOnly`, `SameSite=Lax`, `Secure` en HTTPS)
@@ -157,7 +151,7 @@ La sécurité est incluse dès la V1 (pas reportée).
 
 ---
 
-## API cible (V1)
+## API cible
 
 - `POST /api/syncers` : créer un Syncer
 - `POST /api/syncers/login` : connexion host à un Syncer existant
@@ -170,6 +164,20 @@ La sécurité est incluse dès la V1 (pas reportée).
 - `PATCH /api/syncers/{id}/event-period` : configurer la plage de l'évènement
 - `GET /api/syncers/{id}/results` : récupérer les résultats agrégés de disponibilité
 - `POST /api/maintenance/cleanup-if-needed` : déclencher le nettoyage opportuniste (delta 10 min)
+
+---
+
+## Reste à développer (checklist 1.0.1)
+
+- [ ] Créer une feuille de style globale (`public/css/app.css`)
+- [ ] Brancher la feuille de style sur `index.html`, `host.html`, `syncer.html`, `participant.html`, `result.html`
+- [ ] Définir une charte visuelle simple (couleurs, typo, espacements, bordures, ombres)
+- [ ] Uniformiser les composants (boutons, champs, labels, sections, cartes)
+- [ ] Améliorer le rendu des formulaires (alignements, états focus, messages d'erreur/succès)
+- [ ] Améliorer le rendu des listes participants et du tableau de résultats
+- [ ] Structurer une grille responsive de base (mobile/tablette/desktop)
+- [ ] Vérifier la cohérence visuelle et l'accessibilité de base (contraste, lisibilité, focus visible)
+- [ ] Nettoyer les éléments temporaires ou incohérents de l'UI (textes, sections, placeholders)
 
 ---
 
