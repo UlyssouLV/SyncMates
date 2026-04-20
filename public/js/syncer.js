@@ -64,6 +64,63 @@ function setEventPeriodFeedback(message, isError) {
 }
 
 /**
+ * Affiche un feedback textuel pour la copie du lien de partage.
+ *
+ * @param {string} message Message utilisateur.
+ * @param {boolean} isError Indique si le message est une erreur.
+ */
+function setShareLinkFeedback(message, isError) {
+  const feedbackElement = document.getElementById("share-link-feedback");
+  if (!feedbackElement) {
+    return;
+  }
+
+  feedbackElement.textContent = message;
+  feedbackElement.style.color = isError ? "crimson" : "green";
+}
+
+/**
+ * Copie un texte dans le presse-papiers avec fallback navigateur.
+ *
+ * @param {string} text Texte à copier.
+ * @returns {Promise<boolean>} true si copie réussie, false sinon.
+ */
+async function copyTextToClipboard(text) {
+  if (!text) {
+    return false;
+  }
+
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (_error) {
+      // On tentera le fallback juste après.
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  textarea.style.pointerEvents = "none";
+  document.body.appendChild(textarea);
+  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
+
+  let success = false;
+  try {
+    success = document.execCommand("copy");
+  } catch (_error) {
+    success = false;
+  }
+
+  document.body.removeChild(textarea);
+  return success;
+}
+
+/**
  * Met à jour l'affichage de la période d'évènement.
  *
  * @param {string} eventStartDate Date de début.
@@ -294,6 +351,9 @@ async function configureEventPeriod(currentSyncerId, eventStartDate, eventEndDat
 const syncerId = getQueryParam("id");
 const syncerName = getQueryParam("name");
 const syncerExpiresAt = getQueryParam("expiresAt");
+const shareTokenFromUrl = getQueryParam("token");
+const shareLinkButton = document.getElementById("share-link-button");
+let currentShareLink = "";
 
 if (syncerId) {
   setTextById("syncer-id", syncerId);
@@ -325,10 +385,20 @@ if (syncerId) {
       if (!syncerExpiresAt && syncer.expiresAt) {
         setTextById("syncer-expires-at", String(syncer.expiresAt));
       }
+
+      const shareToken = String(syncer.shareToken || shareTokenFromUrl || "");
+      const participantUrl = new URL("participant.html", window.location.href);
+      participantUrl.searchParams.set("syncerId", syncerId);
+      if (shareToken) {
+        participantUrl.searchParams.set("token", shareToken);
+      }
+      currentShareLink = participantUrl.toString();
+      setShareLinkFeedback("Lien de partage prêt à être copié.", false);
     })
     .catch((error) => {
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
       setAddParticipantFeedback(message, true);
+      setShareLinkFeedback("Impossible de préparer le lien de partage.", true);
     });
 }
 
@@ -441,5 +511,25 @@ if (participantsList) {
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
       setAddParticipantFeedback(message, true);
     }
+  });
+}
+
+if (shareLinkButton) {
+  shareLinkButton.addEventListener("click", async () => {
+    if (!currentShareLink) {
+      setShareLinkFeedback("Aucun lien de partage disponible.", true);
+      return;
+    }
+
+    const copied = await copyTextToClipboard(currentShareLink);
+    if (copied) {
+      setShareLinkFeedback("Lien de partage copié.", false);
+      return;
+    }
+
+    setShareLinkFeedback(
+      "Impossible de copier automatiquement. Copie manuelle: " + currentShareLink,
+      true
+    );
   });
 }

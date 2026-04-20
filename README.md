@@ -198,6 +198,8 @@ La sécurité est incluse dès la V1 (pas reportée).
 - Page `result.html` branchée au backend via `public/js/result.js`
 - Affichage des meilleures dates + détail journalier + résumé participants opérationnel
 - Top des meilleures dates gère les ex-aequo sur le meilleur score
+- Bouton "Copier le lien de partage" fonctionnel sur `syncer.html`
+- Copie du lien avec fallback navigateur (`Clipboard API` + `execCommand`)
 - Routage Apache API en place via `public/.htaccess`
 
 ---
@@ -213,7 +215,7 @@ La sécurité est incluse dès la V1 (pas reportée).
 - [ ] Implémenter sessions serveur + cookie `HttpOnly`/`Secure`/`SameSite`
 - [ ] Protéger les endpoints host par vérification de session
 - [x] Implémenter calcul "meilleures dates"
-- [ ] Finaliser les pages HTML de base (sans style avancé)
+- [x] Finaliser les pages HTML de base (sans style avancé)
 - [ ] Gérer expiration 48h
 
 ---
