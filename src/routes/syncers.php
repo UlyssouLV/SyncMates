@@ -254,6 +254,72 @@ function handleGetSyncerParticipants(string $syncerId): void
 }
 
 /**
+ * Traite GET /api/syncers/{id}/participants/{participantId}/unavailabilities.
+ *
+ * @param string $syncerId      Identifiant du Syncer.
+ * @param string $participantId Identifiant du participant.
+ */
+function handleGetParticipantUnavailabilities(string $syncerId, string $participantId): void
+{
+    try {
+        $participant = getParticipantUnavailabilities($syncerId, $participantId);
+        jsonResponse(200, [
+            'participant' => $participant,
+        ]);
+    } catch (InvalidArgumentException $exception) {
+        jsonResponse(400, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (DomainException $exception) {
+        jsonResponse(404, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (Throwable $exception) {
+        jsonResponse(500, [
+            'error' => 'Erreur serveur lors du chargement des indisponibilités.',
+        ]);
+    }
+}
+
+/**
+ * Traite PATCH /api/syncers/{id}/participants/{participantId}/unavailabilities.
+ *
+ * @param string $syncerId      Identifiant du Syncer.
+ * @param string $participantId Identifiant du participant.
+ */
+function handleUpdateParticipantUnavailabilities(string $syncerId, string $participantId): void
+{
+    $payload = parseJsonRequestBody();
+    if (!is_array($payload)) {
+        return;
+    }
+
+    $unavailableDates = isset($payload['unavailableDates']) && is_array($payload['unavailableDates'])
+        ? $payload['unavailableDates']
+        : [];
+
+    try {
+        $participant = updateParticipantUnavailabilities($syncerId, $participantId, $unavailableDates);
+        jsonResponse(200, [
+            'message' => 'Indisponibilités enregistrées.',
+            'participant' => $participant,
+        ]);
+    } catch (InvalidArgumentException $exception) {
+        jsonResponse(400, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (DomainException $exception) {
+        jsonResponse(404, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (Throwable $exception) {
+        jsonResponse(500, [
+            'error' => 'Erreur serveur lors de l\'enregistrement des indisponibilités.',
+        ]);
+    }
+}
+
+/**
  * Valide et parse un body JSON HTTP.
  *
  * @return array|null Tableau associatif du body JSON, sinon null si erreur.

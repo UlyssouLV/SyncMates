@@ -231,6 +231,134 @@ function getSyncerParticipantsPayload(string $syncerId): array
 }
 
 /**
+ * Retourne les indisponibilités d'un participant d'un Syncer.
+ *
+ * @param string $syncerId      Identifiant technique du Syncer.
+ * @param string $participantId Identifiant du participant.
+ *
+ * @return array Données participant (id, name, unavailableDates).
+ *
+ * @throws InvalidArgumentException Si les identifiants sont invalides.
+ * @throws DomainException          Si le Syncer/participant est introuvable.
+ */
+function getParticipantUnavailabilities(string $syncerId, string $participantId): array
+{
+    $trimmedSyncerId = trim($syncerId);
+    $trimmedParticipantId = trim($participantId);
+
+    if ($trimmedSyncerId === '') {
+        throw new InvalidArgumentException('L\'identifiant du Syncer est requis.');
+    }
+    if ($trimmedParticipantId === '') {
+        throw new InvalidArgumentException('L\'identifiant du participant est requis.');
+    }
+
+    $syncer = getSyncerById($trimmedSyncerId);
+    if (!is_array($syncer)) {
+        throw new DomainException('Syncer introuvable.');
+    }
+
+    $participants = isset($syncer['participants']) && is_array($syncer['participants'])
+        ? $syncer['participants']
+        : [];
+
+    foreach ($participants as $participant) {
+        $currentParticipantId = isset($participant['id']) ? (string) $participant['id'] : '';
+        if ($currentParticipantId !== $trimmedParticipantId) {
+            continue;
+        }
+
+        return [
+            'id' => $currentParticipantId,
+            'name' => isset($participant['name']) ? (string) $participant['name'] : '',
+            'unavailableDates' => isset($participant['unavailableDates']) && is_array($participant['unavailableDates'])
+                ? array_values($participant['unavailableDates'])
+                : [],
+        ];
+    }
+
+    throw new DomainException('Participant introuvable.');
+}
+
+/**
+ * Enregistre les indisponibilités d'un participant.
+ *
+ * @param string $syncerId         Identifiant technique du Syncer.
+ * @param string $participantId    Identifiant du participant.
+ * @param array  $unavailableDates Liste des dates indisponibles (YYYY-MM-DD).
+ *
+ * @return array Données participant mises à jour.
+ *
+ * @throws InvalidArgumentException Si les paramètres sont invalides.
+ * @throws DomainException          Si le Syncer/participant est introuvable.
+ */
+function updateParticipantUnavailabilities(string $syncerId, string $participantId, array $unavailableDates): array
+{
+    $trimmedSyncerId = trim($syncerId);
+    $trimmedParticipantId = trim($participantId);
+
+    if ($trimmedSyncerId === '') {
+        throw new InvalidArgumentException('L\'identifiant du Syncer est requis.');
+    }
+    if ($trimmedParticipantId === '') {
+        throw new InvalidArgumentException('L\'identifiant du participant est requis.');
+    }
+
+    $syncer = getSyncerById($trimmedSyncerId);
+    if (!is_array($syncer)) {
+        throw new DomainException('Syncer introuvable.');
+    }
+
+    $eventStartDate = isset($syncer['eventStartDate']) ? (string) $syncer['eventStartDate'] : '';
+    $eventEndDate = isset($syncer['eventEndDate']) ? (string) $syncer['eventEndDate'] : '';
+    if ($eventStartDate === '' || $eventEndDate === '') {
+        throw new DomainException('La période de l\'évènement n\'est pas configurée.');
+    }
+
+    $normalizedDates = [];
+    foreach ($unavailableDates as $date) {
+        $currentDate = trim((string) $date);
+        if (!isValidIsoDate($currentDate)) {
+            throw new InvalidArgumentException('Chaque date doit respecter le format YYYY-MM-DD.');
+        }
+        if ($currentDate < $eventStartDate || $currentDate > $eventEndDate) {
+            throw new InvalidArgumentException('Les dates doivent rester dans la plage de l\'évènement.');
+        }
+        $normalizedDates[$currentDate] = true;
+    }
+
+    $participants = isset($syncer['participants']) && is_array($syncer['participants'])
+        ? $syncer['participants']
+        : [];
+
+    $updatedParticipant = null;
+    foreach ($participants as &$participant) {
+        $currentParticipantId = isset($participant['id']) ? (string) $participant['id'] : '';
+        if ($currentParticipantId !== $trimmedParticipantId) {
+            continue;
+        }
+
+        $participant['unavailableDates'] = array_keys($normalizedDates);
+        $updatedParticipant = [
+            'id' => $currentParticipantId,
+            'name' => isset($participant['name']) ? (string) $participant['name'] : '',
+            'unavailableDates' => $participant['unavailableDates'],
+        ];
+        break;
+    }
+    unset($participant);
+
+    if (!is_array($updatedParticipant)) {
+        throw new DomainException('Participant introuvable.');
+    }
+
+    $syncer['participants'] = $participants;
+    saveSyncer($syncer);
+
+    return $updatedParticipant;
+}
+
+/**
  * Supprime un participant d'un Syncer existant.
  *
  * @param string $syncerId      Identifiant technique du Syncer.

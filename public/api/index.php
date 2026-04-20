@@ -31,6 +31,8 @@ $deleteParticipantMatches = [];
 $isDeleteParticipantRoute = preg_match('#^/api/syncers/([^/]+)/participants/([^/]+)$#', $normalizedPath, $deleteParticipantMatches) === 1;
 $eventPeriodMatches = [];
 $isEventPeriodRoute = preg_match('#^/api/syncers/([^/]+)/event-period$#', $normalizedPath, $eventPeriodMatches) === 1;
+$participantUnavailabilitiesMatches = [];
+$isParticipantUnavailabilitiesRoute = preg_match('#^/api/syncers/([^/]+)/participants/([^/]+)/unavailabilities$#', $normalizedPath, $participantUnavailabilitiesMatches) === 1;
 
 // Route: création d'un Syncer.
 if ($isCreateSyncerRoute && $method === 'POST') {
@@ -77,6 +79,22 @@ if ($isDeleteParticipantRoute && $method === 'DELETE') {
 if ($isEventPeriodRoute && $method === 'PATCH') {
     $syncerId = isset($eventPeriodMatches[1]) ? (string) $eventPeriodMatches[1] : '';
     handleConfigureEventPeriod($syncerId);
+    exit;
+}
+
+// Route: chargement des indisponibilités d'un participant.
+if ($isParticipantUnavailabilitiesRoute && $method === 'GET') {
+    $syncerId = isset($participantUnavailabilitiesMatches[1]) ? (string) $participantUnavailabilitiesMatches[1] : '';
+    $participantId = isset($participantUnavailabilitiesMatches[2]) ? (string) $participantUnavailabilitiesMatches[2] : '';
+    handleGetParticipantUnavailabilities($syncerId, $participantId);
+    exit;
+}
+
+// Route: mise à jour des indisponibilités d'un participant.
+if ($isParticipantUnavailabilitiesRoute && $method === 'PATCH') {
+    $syncerId = isset($participantUnavailabilitiesMatches[1]) ? (string) $participantUnavailabilitiesMatches[1] : '';
+    $participantId = isset($participantUnavailabilitiesMatches[2]) ? (string) $participantUnavailabilitiesMatches[2] : '';
+    handleUpdateParticipantUnavailabilities($syncerId, $participantId);
     exit;
 }
 

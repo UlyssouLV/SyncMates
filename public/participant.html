@@ -36,19 +36,21 @@
       <section>
         <h2>Mes indisponibilités</h2>
         <form id="participant-unavailabilities-form" method="post" action="#">
-          <div>
-            <label for="unavailable-dates">
-              Dates d'indisponibilité (format YYYY-MM-DD, séparées par des
-              virgules)
-            </label>
-            <textarea
-              id="unavailable-dates"
-              name="unavailableDates"
-              rows="6"
-              placeholder="2026-05-10, 2026-05-11"
-              required
-            ></textarea>
+          <p>
+            Sélectionne les jours où tu n'es pas disponible dans la plage définie
+            par le host.
+          </p>
+
+          <div id="unavailability-picker">
+            <p>Chargement de la plage du Syncer...</p>
           </div>
+
+          <p>
+            <button type="button" id="clear-unavailabilities-button">
+              Tout décocher
+            </button>
+          </p>
+
           <button type="submit">Enregistrer mes indisponibilités</button>
         </form>
         <p id="participant-unavailabilities-feedback" aria-live="polite"></p>

@@ -160,6 +160,8 @@ La sécurité est incluse dès la V1 (pas reportée).
 - `GET /api/syncers/{id}/participants` : récupérer les profils participants d'un Syncer
 - `POST /api/syncers/{id}/participants` : ajouter un participant
 - `DELETE /api/syncers/{id}/participants/{participantId}` : supprimer un participant
+- `GET /api/syncers/{id}/participants/{participantId}/unavailabilities` : charger les indisponibilités d'un participant
+- `PATCH /api/syncers/{id}/participants/{participantId}/unavailabilities` : enregistrer les indisponibilités d'un participant
 - `PATCH /api/syncers/{id}/event-period` : configurer la plage de l'évènement
 
 ---
@@ -182,11 +184,15 @@ La sécurité est incluse dès la V1 (pas reportée).
 - Route API de chargement des profils participants implémentée : `GET /api/syncers/{id}/participants`
 - Route API d'ajout participant implémentée : `POST /api/syncers/{id}/participants`
 - Route API de suppression participant implémentée : `DELETE /api/syncers/{id}/participants/{participantId}`
+- Route API de chargement indisponibilités participant implémentée : `GET /api/syncers/{id}/participants/{participantId}/unavailabilities`
+- Route API d'enregistrement indisponibilités participant implémentée : `PATCH /api/syncers/{id}/participants/{participantId}/unavailabilities`
 - Route API de configuration de période implémentée : `PATCH /api/syncers/{id}/event-period`
 - Page `syncer.html` branchée avec chargement automatique des participants au refresh
 - Suppression participant disponible côté UI via bouton "Supprimer"
 - Configuration de période disponible côté UI (`date début` / `date fin`)
 - Page `participant.html` branchée avec chargement des profils participants dans le select
+- Page `participant.html` branchée avec chargement/enregistrement des indisponibilités par profil
+- Grille de saisie des indisponibilités pilotée par la plage `eventStartDate` / `eventEndDate`
 - Routage Apache API en place via `public/.htaccess`
 
 ---
@@ -196,12 +202,11 @@ La sécurité est incluse dès la V1 (pas reportée).
 - [x] Initialiser le projet PHP (`public`, `src`, `data`, `.htaccess`)
 - [x] Créer l'architecture dossiers `public`, `src`, `data`
 - [x] Implémenter le stockage JSON robuste (1 fichier par Syncer + lecture/écriture atomique)
-- [ ] Compléter les endpoints Syncer + participants (enregistrement des indisponibilités, résultats)
+- [ ] Compléter les endpoints Syncer + participants (résultats et agrégation des disponibilités)
 - [ ] Exploiter `eventStartDate` / `eventEndDate` dans la saisie et l'analyse des indisponibilités
 - [ ] Finaliser auth host (session serveur sécurisée)
 - [ ] Implémenter sessions serveur + cookie `HttpOnly`/`Secure`/`SameSite`
 - [ ] Protéger les endpoints host par vérification de session
-- [ ] Créer saisie d'indisponibilités côté participant
 - [ ] Implémenter calcul "meilleures dates"
 - [ ] Finaliser les pages HTML de base (sans style avancé)
 - [ ] Gérer expiration 48h
