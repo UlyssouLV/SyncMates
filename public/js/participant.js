@@ -707,15 +707,9 @@ if (participantUnavailabilitiesForm) {
         unavailableDates,
         availableDates
       );
-      const savedUnavailableDates = Array.isArray(result?.participant?.unavailableDates)
-        ? result.participant.unavailableDates
-        : [];
-      const savedAvailableDates = Array.isArray(result?.participant?.availableDates)
-        ? result.participant.availableDates
-        : [];
-      const usesThreeState = result?.participant?.availabilityModel === "three-state";
-      applyAvailabilitySelection(savedUnavailableDates, savedAvailableDates, usesThreeState);
-      setUnavailabilitiesFeedback("Indisponibilités enregistrées.", false);
+      const resultsUrl = new URL("result.html", window.location.href);
+      resultsUrl.searchParams.set("syncerId", syncerId);
+      window.location.href = resultsUrl.toString();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
       setUnavailabilitiesFeedback(message, true);
