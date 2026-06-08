@@ -32,6 +32,8 @@ $deleteParticipantMatches = [];
 $isDeleteParticipantRoute = preg_match('#^/api/syncers/([^/]+)/participants/([^/]+)$#', $normalizedPath, $deleteParticipantMatches) === 1;
 $eventPeriodMatches = [];
 $isEventPeriodRoute = preg_match('#^/api/syncers/([^/]+)/event-period$#', $normalizedPath, $eventPeriodMatches) === 1;
+$exceptionDatesMatches = [];
+$isExceptionDatesRoute = preg_match('#^/api/syncers/([^/]+)/exception-dates$#', $normalizedPath, $exceptionDatesMatches) === 1;
 $participantUnavailabilitiesMatches = [];
 $isParticipantUnavailabilitiesRoute = preg_match('#^/api/syncers/([^/]+)/participants/([^/]+)/unavailabilities$#', $normalizedPath, $participantUnavailabilitiesMatches) === 1;
 $resultsMatches = [];
@@ -88,6 +90,13 @@ if ($isDeleteParticipantRoute && $method === 'DELETE') {
 if ($isEventPeriodRoute && $method === 'PATCH') {
     $syncerId = isset($eventPeriodMatches[1]) ? (string) $eventPeriodMatches[1] : '';
     handleConfigureEventPeriod($syncerId);
+    exit;
+}
+
+// Route: jours d'exception du Syncer (host).
+if ($isExceptionDatesRoute && $method === 'PATCH') {
+    $syncerId = isset($exceptionDatesMatches[1]) ? (string) $exceptionDatesMatches[1] : '';
+    handleUpdateSyncerExceptionDates($syncerId);
     exit;
 }
 

@@ -18,6 +18,14 @@
   background: #18724c;
 }
 
+.page-syncer #save-exception-dates-button {
+  background: #58627a;
+}
+
+.page-syncer #save-exception-dates-button:hover {
+  background: #3f475c;
+}
+
 .page-syncer .prolonger-hint {
   display: inline-block;
   margin-left: 8px;
@@ -28,4 +36,91 @@
   color: var(--muted);
   cursor: help;
   background: #fff;
+}
+
+.page-syncer #exception-dates-picker {
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.page-syncer #syncer-exception-calendar {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  touch-action: manipulation;
+}
+
+.page-syncer .fc .fc-toolbar.fc-header-toolbar {
+  margin-bottom: 0.6rem;
+}
+
+.page-syncer .fc .fc-toolbar-title {
+  font-size: 1.1rem;
+}
+
+.page-syncer .fc .fc-button {
+  background: var(--primary);
+  border-color: var(--primary);
+  font-size: 0.86rem;
+}
+
+.page-syncer .fc .fc-button:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.page-syncer .fc .fc-button-primary:not(:disabled).fc-button-active,
+.page-syncer .fc .fc-button-primary:not(:disabled):active {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.page-syncer .fc .fc-daygrid-day.fc-day-in-range .fc-daygrid-day-frame {
+  background: #fff;
+}
+
+.page-syncer .fc .fc-daygrid-day.fc-day-exception .fc-daygrid-day-frame {
+  background: #c4a8e8;
+}
+
+.page-syncer .fc .fc-daygrid-day.fc-day-out-of-range .fc-daygrid-day-frame {
+  background: #f2f4f8;
+  opacity: 0.7;
+}
+
+.page-syncer .fc .fc-daygrid-day.fc-day-in-range {
+  cursor: pointer;
+}
+
+.page-syncer .fc .fc-daygrid-day.fc-day-out-of-range {
+  cursor: default;
+}
+
+.page-syncer .fc .fc-daygrid-day-number {
+  color: var(--text);
+  font-weight: 600;
+}
+
+@media (max-width: 780px) {
+  .page-syncer #syncer-exception-calendar {
+    padding: 6px;
+  }
+
+  .page-syncer .fc .fc-toolbar {
+    display: grid;
+    gap: 8px;
+  }
+
+  .page-syncer .fc .fc-toolbar-chunk {
+    display: flex;
+    justify-content: center;
+  }
+
+  .page-syncer .fc {
+    height: 560px !important;
+  }
 }

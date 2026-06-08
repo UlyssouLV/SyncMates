@@ -146,6 +146,264 @@ function setShareLinkFeedback(message, isError) {
 }
 
 /**
+ * Affiche un feedback pour les jours d'exception.
+ *
+ * @param {string} message Message utilisateur.
+ * @param {boolean} isError Indique si le message est une erreur.
+ */
+function setExceptionDatesFeedback(message, isError) {
+  const feedbackElement = document.getElementById("exception-dates-feedback");
+  if (!feedbackElement) {
+    return;
+  }
+
+  feedbackElement.textContent = message;
+  feedbackElement.style.color = isError ? "crimson" : "green";
+}
+
+let syncerExceptionDatesSet = new Set();
+let syncerExceptionCalendar = null;
+let syncerEventStartDate = "";
+let syncerEventEndDate = "";
+
+/**
+ * Convertit une date locale JS en format ISO (YYYY-MM-DD).
+ *
+ * @param {Date} date Date à convertir.
+ * @returns {string} Date ISO locale.
+ */
+function formatDateLocalIso(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Vérifie qu'une date ISO est dans la plage [start, end].
+ *
+ * @param {string} isoDate Date testée.
+ * @param {string} start Début de plage.
+ * @param {string} end Fin de plage.
+ * @returns {boolean} true si date valide et dans la plage.
+ */
+function isDateWithinRange(isoDate, start, end) {
+  if (!isoDate || !start || !end) {
+    return false;
+  }
+  return isoDate >= start && isoDate <= end;
+}
+
+/**
+ * Ajoute un jour à une date ISO (YYYY-MM-DD).
+ *
+ * @param {string} isoDate Date ISO d'entrée.
+ * @returns {string} Date ISO + 1 jour.
+ */
+function addOneDayIso(isoDate) {
+  const parts = String(isoDate || "").split("-");
+  if (parts.length !== 3) {
+    return isoDate;
+  }
+
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+  const day = Number(parts[2]);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+    return isoDate;
+  }
+
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + 1);
+  const nextYear = date.getUTCFullYear();
+  const nextMonth = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const nextDay = String(date.getUTCDate()).padStart(2, "0");
+  return `${nextYear}-${nextMonth}-${nextDay}`;
+}
+
+/**
+ * Retourne la classe CSS d'un jour du calendrier d'exceptions host.
+ *
+ * @param {string} isoDate Date ISO (YYYY-MM-DD).
+ * @returns {string} Classe CSS.
+ */
+function getSyncerExceptionDayClass(isoDate) {
+  if (!isDateWithinRange(isoDate, syncerEventStartDate, syncerEventEndDate)) {
+    return "fc-day-out-of-range";
+  }
+
+  if (syncerExceptionDatesSet.has(isoDate)) {
+    return "fc-day-exception";
+  }
+
+  return "fc-day-in-range";
+}
+
+/**
+ * Applique les classes sur les cellules du calendrier d'exceptions.
+ */
+function updateSyncerExceptionCalendarDayClasses() {
+  if (syncerExceptionCalendar && typeof syncerExceptionCalendar.rerenderDates === "function") {
+    syncerExceptionCalendar.rerenderDates();
+  }
+
+  const dayCells = document.querySelectorAll("#syncer-exception-calendar .fc-daygrid-day[data-date]");
+  for (const cell of dayCells) {
+    if (!(cell instanceof HTMLElement)) {
+      continue;
+    }
+
+    const isoDate = String(cell.dataset.date || "");
+    cell.classList.remove("fc-day-in-range", "fc-day-exception", "fc-day-out-of-range");
+    cell.classList.add(getSyncerExceptionDayClass(isoDate));
+  }
+}
+
+/**
+ * Applique la sélection des jours d'exception chargée depuis l'API.
+ *
+ * @param {Array<string>} exceptionDates Jours d'exception.
+ */
+function applyExceptionDatesSelection(exceptionDates) {
+  syncerExceptionDatesSet = new Set();
+  if (Array.isArray(exceptionDates)) {
+    for (const date of exceptionDates) {
+      const isoDate = String(date || "");
+      if (isDateWithinRange(isoDate, syncerEventStartDate, syncerEventEndDate)) {
+        syncerExceptionDatesSet.add(isoDate);
+      }
+    }
+  }
+  updateSyncerExceptionCalendarDayClasses();
+}
+
+/**
+ * Affiche le calendrier de sélection des jours d'exception.
+ *
+ * @param {string} eventStartDate Date de début.
+ * @param {string} eventEndDate Date de fin.
+ * @param {Array<string>} exceptionDates Jours d'exception existants.
+ */
+function renderExceptionDatesCalendar(eventStartDate, eventEndDate, exceptionDates) {
+  const pickerElement = document.getElementById("exception-dates-picker");
+  if (!pickerElement) {
+    return;
+  }
+
+  syncerEventStartDate = String(eventStartDate || "");
+  syncerEventEndDate = String(eventEndDate || "");
+  syncerExceptionDatesSet = new Set();
+
+  if (!syncerEventStartDate || !syncerEventEndDate) {
+    pickerElement.innerHTML = "<p>Configure d'abord la période de l'évènement.</p>";
+    return;
+  }
+
+  if (!window.FullCalendar || !window.FullCalendar.Calendar) {
+    pickerElement.innerHTML = "<p>Calendrier indisponible pour le moment.</p>";
+    return;
+  }
+
+  pickerElement.innerHTML = "";
+  const calendarRoot = document.createElement("div");
+  calendarRoot.id = "syncer-exception-calendar";
+  pickerElement.appendChild(calendarRoot);
+
+  if (syncerExceptionCalendar) {
+    syncerExceptionCalendar.destroy();
+    syncerExceptionCalendar = null;
+  }
+
+  syncerExceptionCalendar = new window.FullCalendar.Calendar(calendarRoot, {
+    initialView: "dayGridMonth",
+    initialDate: syncerEventStartDate,
+    locale: "fr",
+    firstDay: 1,
+    fixedWeekCount: true,
+    height: 560,
+    expandRows: true,
+    validRange: {
+      start: syncerEventStartDate,
+      end: addOneDayIso(syncerEventEndDate),
+    },
+    headerToolbar: {
+      left: "prev,next today",
+      center: "title",
+      right: "",
+    },
+    datesSet: () => {
+      requestAnimationFrame(() => {
+        updateSyncerExceptionCalendarDayClasses();
+      });
+    },
+    dayCellClassNames: (arg) => {
+      const isoDate = formatDateLocalIso(arg.date);
+      return [getSyncerExceptionDayClass(isoDate)];
+    },
+    dateClick: (info) => {
+      const isoDate = info.dateStr;
+      if (!isDateWithinRange(isoDate, syncerEventStartDate, syncerEventEndDate)) {
+        return;
+      }
+
+      if (syncerExceptionDatesSet.has(isoDate)) {
+        syncerExceptionDatesSet.delete(isoDate);
+      } else {
+        syncerExceptionDatesSet.add(isoDate);
+      }
+
+      updateSyncerExceptionCalendarDayClasses();
+    },
+  });
+
+  syncerExceptionCalendar.render();
+  applyExceptionDatesSelection(exceptionDates);
+}
+
+/**
+ * Enregistre les jours d'exception du synchroniseur.
+ *
+ * @param {string} currentSyncerId Identifiant du synchroniseur.
+ * @param {Array<string>} exceptionDates Jours d'exception.
+ * @returns {Promise<Object>} Réponse JSON de l'API.
+ * @throws {Error} Si la réponse API est en erreur.
+ */
+async function saveExceptionDates(currentSyncerId, exceptionDates) {
+  const response = await fetch(
+    `/api/syncers/${encodeURIComponent(currentSyncerId)}/exception-dates`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        exceptionDates,
+      }),
+    }
+  );
+
+  const rawResponse = await response.text();
+  let data = {};
+  try {
+    data = rawResponse ? JSON.parse(rawResponse) : {};
+  } catch (_parseError) {
+    data = {};
+  }
+
+  if (!response.ok) {
+    const backendMessage = data.error || "";
+    const fallbackMessage = rawResponse ? rawResponse.slice(0, 180) : "";
+    const details = backendMessage || fallbackMessage || "Aucun détail serveur.";
+    throw buildHttpError(
+      `Erreur enregistrement exceptions (${response.status} ${response.statusText}) - ${details}`,
+      response.status
+    );
+  }
+
+  return data;
+}
+
+/**
  * Copie un texte dans le presse-papiers avec fallback navigateur.
  *
  * @param {string} text Texte à copier.
@@ -440,8 +698,12 @@ if (syncerId) {
       const syncer = result?.syncer || {};
       const participants = Array.isArray(syncer.participants) ? syncer.participants : [];
       renderParticipants(participants);
-      renderEventPeriod(String(syncer.eventStartDate || ""), String(syncer.eventEndDate || ""));
-      hydrateEventPeriodForm(String(syncer.eventStartDate || ""), String(syncer.eventEndDate || ""));
+      const start = String(syncer.eventStartDate || "");
+      const end = String(syncer.eventEndDate || "");
+      const exceptionDates = Array.isArray(syncer.exceptionDates) ? syncer.exceptionDates : [];
+      renderEventPeriod(start, end);
+      hydrateEventPeriodForm(start, end);
+      renderExceptionDatesCalendar(start, end, exceptionDates);
 
       // Si certaines infos manquent dans l'URL, on complète depuis l'API.
       if (!syncerName && syncer.name) {
@@ -545,6 +807,8 @@ if (eventPeriodForm) {
       const end = String(syncer.eventEndDate || eventEndDate);
       renderEventPeriod(start, end);
       hydrateEventPeriodForm(start, end);
+      const exceptionDates = Array.isArray(syncer.exceptionDates) ? syncer.exceptionDates : [];
+      renderExceptionDatesCalendar(start, end, exceptionDates);
       setEventPeriodFeedback("Période configurée avec succès.", false);
     } catch (error) {
       if (redirectToHostIfUnauthorized(error)) {
@@ -588,6 +852,39 @@ if (participantsList) {
       }
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
       setAddParticipantFeedback(message, true);
+    }
+  });
+}
+
+const saveExceptionDatesButton = document.getElementById("save-exception-dates-button");
+if (saveExceptionDatesButton) {
+  saveExceptionDatesButton.addEventListener("click", async () => {
+    if (!syncerId) {
+      setExceptionDatesFeedback("Impossible d'enregistrer sans identifiant de synchroniseur.", true);
+      return;
+    }
+
+    if (!syncerEventStartDate || !syncerEventEndDate) {
+      setExceptionDatesFeedback("Configure d'abord la période de l'évènement.", true);
+      return;
+    }
+
+    const exceptionDates = Array.from(syncerExceptionDatesSet).sort();
+    setExceptionDatesFeedback("Enregistrement en cours...", false);
+
+    try {
+      const result = await saveExceptionDates(syncerId, exceptionDates);
+      const savedDates = Array.isArray(result?.syncer?.exceptionDates)
+        ? result.syncer.exceptionDates
+        : exceptionDates;
+      applyExceptionDatesSelection(savedDates);
+      setExceptionDatesFeedback("Jours d'exception enregistrés.", false);
+    } catch (error) {
+      if (redirectToHostIfUnauthorized(error)) {
+        return;
+      }
+      const message = error instanceof Error ? error.message : "Erreur inconnue.";
+      setExceptionDatesFeedback(message, true);
     }
   });
 }

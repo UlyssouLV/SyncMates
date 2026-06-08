@@ -6,6 +6,10 @@
     <title>SyncMates - Synchroniseur</title>
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="css/pages/syncer.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css"
+    />
   </head>
   <body class="page-syncer">
     <main>
@@ -47,6 +51,21 @@
         <p id="event-period-feedback" aria-live="polite"></p>
       </section>
 
+      <section id="exception-dates-section">
+        <h2>Jours d'exception</h2>
+        <p>
+          Clique sur les jours où tu ne peux pas organiser l'évènement. Les participants ne
+          pourront pas indiquer leur disponibilité sur ces dates.
+        </p>
+        <div id="exception-dates-picker">
+          <p>Configure d'abord la période de l'évènement.</p>
+        </div>
+        <p>
+          <button type="button" id="save-exception-dates-button">Enregistrer les exceptions</button>
+        </p>
+        <p id="exception-dates-feedback" aria-live="polite"></p>
+      </section>
+
       <section>
         <h2>Participants</h2>
         <ul id="participants-list">
@@ -76,6 +95,7 @@
       <p><a href="host.html">Retour à la connexion synchroniseur</a></p>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js" defer></script>
     <script src="js/maintenance.js" defer></script>
     <script src="js/syncer.js" defer></script>
   </body>

@@ -223,6 +223,49 @@ function handleConfigureEventPeriod(string $syncerId): void
 }
 
 /**
+ * Traite PATCH /api/syncers/{id}/exception-dates.
+ *
+ * Enregistre les jours d'exception (non organisables) du Syncer.
+ *
+ * @param string $syncerId Identifiant technique du Syncer.
+ */
+function handleUpdateSyncerExceptionDates(string $syncerId): void
+{
+    if (!requireHostSessionForSyncer($syncerId)) {
+        return;
+    }
+
+    $payload = parseJsonRequestBody();
+    if (!is_array($payload)) {
+        return;
+    }
+
+    $exceptionDates = isset($payload['exceptionDates']) && is_array($payload['exceptionDates'])
+        ? $payload['exceptionDates']
+        : [];
+
+    try {
+        $syncer = updateSyncerExceptionDates($syncerId, $exceptionDates);
+        jsonResponse(200, [
+            'message' => 'Jours d\'exception enregistrés.',
+            'syncer' => $syncer,
+        ]);
+    } catch (InvalidArgumentException $exception) {
+        jsonResponse(400, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (DomainException $exception) {
+        jsonResponse(404, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (Throwable $exception) {
+        jsonResponse(500, [
+            'error' => 'Erreur serveur lors de l\'enregistrement des jours d\'exception.',
+        ]);
+    }
+}
+
+/**
  * Traite GET /api/syncers/{id}.
  *
  * Renvoie le détail public du Syncer, incluant la liste des participants.

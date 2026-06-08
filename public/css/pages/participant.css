@@ -126,6 +126,20 @@
   opacity: 0.7;
 }
 
+.page-participant .fc .fc-daygrid-day.fc-day-host-exception .fc-daygrid-day-frame {
+  background: #1a1a1a;
+  opacity: 1;
+}
+
+.page-participant .fc .fc-daygrid-day.fc-day-host-exception {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.page-participant .fc .fc-daygrid-day.fc-day-host-exception .fc-daygrid-day-number {
+  color: #f5f5f5;
+}
+
 .page-participant .fc .fc-daygrid-day-number {
   color: var(--text);
   font-weight: 600;

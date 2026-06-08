@@ -67,6 +67,7 @@ function createSyncer(string $name, string $password): array
         'participants' => [],
         'eventStartDate' => null,
         'eventEndDate' => null,
+        'exceptionDates' => [],
         'createdAt' => nowIso8601(),
         'expiresAt' => expiresInHoursIso8601(48),
         'shareToken' => generateShareToken(),
@@ -228,6 +229,7 @@ function getSyncerParticipantsPayload(string $syncerId): array
         'name' => isset($syncer['name']) ? (string) $syncer['name'] : '',
         'eventStartDate' => isset($syncer['eventStartDate']) ? $syncer['eventStartDate'] : null,
         'eventEndDate' => isset($syncer['eventEndDate']) ? $syncer['eventEndDate'] : null,
+        'exceptionDates' => getSyncerExceptionDates($syncer),
         'participants' => $participantProfiles,
     ];
 }
@@ -317,6 +319,8 @@ function updateParticipantUnavailabilities(
         throw new DomainException('La période de l\'évènement n\'est pas configurée.');
     }
 
+    $exceptionDates = getSyncerExceptionDates($syncer);
+
     $normalizedUnavailableDates = normalizeParticipantDateList(
         $unavailableDates,
         $eventStartDate,
@@ -327,6 +331,9 @@ function updateParticipantUnavailabilities(
         $eventStartDate,
         $eventEndDate
     );
+
+    $normalizedUnavailableDates = filterDatesExcludingExceptions($normalizedUnavailableDates, $exceptionDates);
+    $normalizedAvailableDates = filterDatesExcludingExceptions($normalizedAvailableDates, $exceptionDates);
 
     $overlapDates = array_intersect($normalizedUnavailableDates, $normalizedAvailableDates);
     if (count($overlapDates) > 0) {
@@ -452,8 +459,80 @@ function configureSyncerEventPeriod(string $syncerId, string $eventStartDate, st
         throw new DomainException('Syncer introuvable.');
     }
 
+    $existingExceptionDates = getSyncerExceptionDates($syncer);
+    $filteredExceptionDates = [];
+    foreach ($existingExceptionDates as $exceptionDate) {
+        if ($exceptionDate >= $trimmedStartDate && $exceptionDate <= $trimmedEndDate) {
+            $filteredExceptionDates[] = $exceptionDate;
+        }
+    }
+
     $syncer['eventStartDate'] = $trimmedStartDate;
     $syncer['eventEndDate'] = $trimmedEndDate;
+    $syncer['exceptionDates'] = array_values($filteredExceptionDates);
+    saveSyncer($syncer);
+
+    unset($syncer['passwordHash']);
+    return $syncer;
+}
+
+/**
+ * Enregistre les jours d'exception d'un Syncer (jours non organisables).
+ *
+ * @param string $syncerId       Identifiant technique du Syncer.
+ * @param array  $exceptionDates Liste des dates d'exception (YYYY-MM-DD).
+ *
+ * @return array Syncer mis à jour, sans passwordHash.
+ *
+ * @throws InvalidArgumentException Si les paramètres sont invalides.
+ * @throws DomainException          Si le Syncer est introuvable ou la période absente.
+ */
+function updateSyncerExceptionDates(string $syncerId, array $exceptionDates): array
+{
+    $trimmedSyncerId = trim($syncerId);
+    if ($trimmedSyncerId === '') {
+        throw new InvalidArgumentException('L\'identifiant du Syncer est requis.');
+    }
+
+    $syncer = getSyncerById($trimmedSyncerId);
+    if (!is_array($syncer)) {
+        throw new DomainException('Syncer introuvable.');
+    }
+
+    $eventStartDate = isset($syncer['eventStartDate']) ? (string) $syncer['eventStartDate'] : '';
+    $eventEndDate = isset($syncer['eventEndDate']) ? (string) $syncer['eventEndDate'] : '';
+    if ($eventStartDate === '' || $eventEndDate === '') {
+        throw new DomainException('La période de l\'évènement n\'est pas configurée.');
+    }
+
+    $normalizedExceptionDates = normalizeParticipantDateList(
+        $exceptionDates,
+        $eventStartDate,
+        $eventEndDate
+    );
+
+    $participants = isset($syncer['participants']) && is_array($syncer['participants'])
+        ? $syncer['participants']
+        : [];
+
+    foreach ($participants as &$participant) {
+        if (isset($participant['unavailableDates']) && is_array($participant['unavailableDates'])) {
+            $participant['unavailableDates'] = filterDatesExcludingExceptions(
+                array_values($participant['unavailableDates']),
+                $normalizedExceptionDates
+            );
+        }
+        if (isset($participant['availableDates']) && is_array($participant['availableDates'])) {
+            $participant['availableDates'] = filterDatesExcludingExceptions(
+                array_values($participant['availableDates']),
+                $normalizedExceptionDates
+            );
+        }
+    }
+    unset($participant);
+
+    $syncer['participants'] = $participants;
+    $syncer['exceptionDates'] = $normalizedExceptionDates;
     saveSyncer($syncer);
 
     unset($syncer['passwordHash']);
@@ -520,9 +599,16 @@ function getSyncerResults(string $syncerId): array
         $participantSummaries[] = buildParticipantAvailabilityPayload($participant);
     }
 
+    $exceptionDates = getSyncerExceptionDates($syncer);
+
     $dailyAvailability = [];
     $currentDate = $eventStartDate;
     while ($currentDate <= $eventEndDate) {
+        if (in_array($currentDate, $exceptionDates, true)) {
+            $currentDate = date('Y-m-d', strtotime($currentDate . ' +1 day'));
+            continue;
+        }
+
         $availableCount = 0;
         $unavailableCount = 0;
         $unspecifiedCount = 0;
@@ -599,6 +685,7 @@ function getSyncerResults(string $syncerId): array
             'name' => isset($syncer['name']) ? (string) $syncer['name'] : '',
             'eventStartDate' => $eventStartDate,
             'eventEndDate' => $eventEndDate,
+            'exceptionDates' => $exceptionDates,
         ],
         'participantsCount' => $totalParticipants,
         'participants' => $participantSummaries,
@@ -612,6 +699,49 @@ function getSyncerResults(string $syncerId): array
  *
  * @param array $participant Données participant.
  */
+/**
+ * Retourne les jours d'exception d'un Syncer.
+ *
+ * @param array $syncer Données Syncer.
+ *
+ * @return array Dates d'exception triées (YYYY-MM-DD).
+ */
+function getSyncerExceptionDates(array $syncer): array
+{
+    if (!isset($syncer['exceptionDates']) || !is_array($syncer['exceptionDates'])) {
+        return [];
+    }
+
+    $dates = array_values($syncer['exceptionDates']);
+    sort($dates);
+
+    return $dates;
+}
+
+/**
+ * Retire les dates d'exception d'une liste de dates participant.
+ *
+ * @param array $dates           Dates à filtrer.
+ * @param array $exceptionDates  Dates d'exception du Syncer.
+ *
+ * @return array Dates filtrées.
+ */
+function filterDatesExcludingExceptions(array $dates, array $exceptionDates): array
+{
+    if (count($exceptionDates) === 0) {
+        return array_values($dates);
+    }
+
+    $filteredDates = [];
+    foreach ($dates as $date) {
+        if (!in_array($date, $exceptionDates, true)) {
+            $filteredDates[] = $date;
+        }
+    }
+
+    return array_values($filteredDates);
+}
+
 function participantUsesThreeStateAvailability(array $participant): bool
 {
     return isset($participant['availabilityModel'])

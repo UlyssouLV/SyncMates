@@ -118,6 +118,15 @@
   opacity: 0.7;
 }
 
+.page-result .fc .fc-daygrid-day.fc-day-host-exception .fc-daygrid-day-frame {
+  background: #1a1a1a;
+  opacity: 1;
+}
+
+.page-result .fc .fc-daygrid-day.fc-day-host-exception .fc-daygrid-day-number {
+  color: #f5f5f5;
+}
+
 .page-result .fc .fc-daygrid-day-number {
   color: var(--text);
   font-weight: 600;
@@ -174,6 +183,10 @@
 
 .page-result .legend-none {
   background: #e4e9f2;
+}
+
+.page-result .legend-host-exception {
+  background: #1a1a1a;
 }
 
 .page-result .legend-participant-available {
@@ -349,8 +362,12 @@
   color: var(--muted);
 }
 
-.page-result .results-calendar--aggregate .fc-daygrid-day:not(.fc-day-out-of-range) {
+.page-result .results-calendar--aggregate .fc-daygrid-day:not(.fc-day-out-of-range):not(.fc-day-host-exception) {
   cursor: pointer;
+}
+
+.page-result .results-calendar--aggregate .fc-daygrid-day.fc-day-host-exception {
+  cursor: not-allowed;
 }
 
 .page-result .results-calendar--participant .fc-daygrid-day {

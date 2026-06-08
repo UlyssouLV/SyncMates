@@ -96,6 +96,36 @@ let resultsEventEndDate = "";
 let resultsCalendarMode = "aggregate";
 let resultsSelectedParticipant = null;
 let resultsParticipantsById = new Map();
+let resultsHostExceptionDatesSet = new Set();
+
+/**
+ * Indique si le host a exclu cette date de l'évènement.
+ *
+ * @param {string} isoDate Date ISO (YYYY-MM-DD).
+ * @returns {boolean} true si le jour est une exception host.
+ */
+function isHostExceptionDate(isoDate) {
+  return resultsHostExceptionDatesSet.has(isoDate);
+}
+
+/**
+ * Charge les jours d'exception du host dans la plage courante.
+ *
+ * @param {Array<string>} exceptionDates Jours d'exception.
+ */
+function applyHostExceptionDates(exceptionDates) {
+  resultsHostExceptionDatesSet = new Set();
+  if (!Array.isArray(exceptionDates)) {
+    return;
+  }
+
+  for (const date of exceptionDates) {
+    const isoDate = String(date || "");
+    if (isDateWithinRange(isoDate, resultsEventStartDate, resultsEventEndDate)) {
+      resultsHostExceptionDatesSet.add(isoDate);
+    }
+  }
+}
 
 /**
  * Vérifie qu'une date ISO est dans la plage [start, end].
@@ -162,6 +192,7 @@ const RESULTS_CALENDAR_DAY_CLASSES = [
   "fc-day-unavailable",
   "fc-day-unspecified",
   "fc-day-out-of-range",
+  "fc-day-host-exception",
 ];
 
 /**
@@ -173,6 +204,10 @@ const RESULTS_CALENDAR_DAY_CLASSES = [
 function getDateScoreClass(isoDate) {
   if (!isDateWithinRange(isoDate, resultsEventStartDate, resultsEventEndDate)) {
     return "fc-day-out-of-range";
+  }
+
+  if (isHostExceptionDate(isoDate)) {
+    return "fc-day-host-exception";
   }
 
   const row = resultsDailyAvailabilityByDate.get(isoDate);
@@ -207,6 +242,10 @@ function getDateScoreClass(isoDate) {
 function getParticipantDateClass(participant, isoDate) {
   if (!isDateWithinRange(isoDate, resultsEventStartDate, resultsEventEndDate)) {
     return "fc-day-out-of-range";
+  }
+
+  if (isHostExceptionDate(isoDate)) {
+    return "fc-day-host-exception";
   }
 
   const unavailableDates = Array.isArray(participant?.unavailableDates)
@@ -248,6 +287,10 @@ function getResultsCalendarDayClass(isoDate) {
  * @returns {string} Texte descriptif.
  */
 function buildDateScoreTitle(isoDate) {
+  if (isHostExceptionDate(isoDate)) {
+    return "Jour exclu par le host";
+  }
+
   const row = resultsDailyAvailabilityByDate.get(isoDate);
   if (!row) {
     return "";
@@ -272,6 +315,9 @@ function buildParticipantDateTitle(participant, isoDate) {
   const dayClass = getParticipantDateClass(participant, isoDate);
   if (dayClass === "fc-day-out-of-range") {
     return "";
+  }
+  if (dayClass === "fc-day-host-exception") {
+    return "Jour exclu par le host";
   }
   if (dayClass === "fc-day-unavailable") {
     return "Indisponible";
@@ -509,6 +555,8 @@ function renderBestDatesCalendar(syncer, dailyAvailability, bestDates) {
   const eventEndDate = String(syncer?.eventEndDate || "");
   resultsEventStartDate = eventStartDate;
   resultsEventEndDate = eventEndDate;
+  const exceptionDates = Array.isArray(syncer?.exceptionDates) ? syncer.exceptionDates : [];
+  applyHostExceptionDates(exceptionDates);
 
   resultsDailyAvailabilityByDate = new Map();
   resultsBestDateSet = new Set();
@@ -545,11 +593,6 @@ function renderBestDatesCalendar(syncer, dailyAvailability, bestDates) {
   if (!eventStartDate || !eventEndDate) {
     pickerElement.innerHTML =
       "<p>La période de l'évènement n'est pas configurée. Aucun calendrier à afficher.</p>";
-    return;
-  }
-
-  if (!Array.isArray(dailyAvailability) || dailyAvailability.length === 0) {
-    pickerElement.innerHTML = "<p>Aucune date à afficher pour le moment.</p>";
     return;
   }
 
@@ -601,6 +644,10 @@ function renderBestDatesCalendar(syncer, dailyAvailability, bestDates) {
 
       const isoDate = info.dateStr;
       if (!isDateWithinRange(isoDate, resultsEventStartDate, resultsEventEndDate)) {
+        return;
+      }
+
+      if (isHostExceptionDate(isoDate)) {
         return;
       }
 

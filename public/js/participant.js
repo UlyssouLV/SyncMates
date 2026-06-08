@@ -93,9 +93,20 @@ function setUnavailabilitiesFeedback(message, isError) {
 
 let unavailableDatesSet = new Set();
 let availableDatesSet = new Set();
+let hostExceptionDatesSet = new Set();
 let currentEventStartDate = "";
 let currentEventEndDate = "";
 let participantCalendar = null;
+
+/**
+ * Indique si le host a exclu cette date de l'évènement.
+ *
+ * @param {string} isoDate Date ISO (YYYY-MM-DD).
+ * @returns {boolean} true si le jour est une exception host.
+ */
+function isHostExceptionDate(isoDate) {
+  return hostExceptionDatesSet.has(isoDate);
+}
 
 /**
  * Retourne l'état d'une date dans la grille participant.
@@ -122,6 +133,10 @@ function getDateAvailabilityState(isoDate) {
  * @returns {string} Classe CSS FullCalendar.
  */
 function getDateAvailabilityClass(isoDate) {
+  if (isHostExceptionDate(isoDate)) {
+    return "fc-day-host-exception";
+  }
+
   const state = getDateAvailabilityState(isoDate);
   if (state === "unavailable") {
     return "fc-day-unavailable";
@@ -140,6 +155,10 @@ function getDateAvailabilityClass(isoDate) {
  * @param {string} isoDate Date ISO (YYYY-MM-DD).
  */
 function cycleDateAvailabilityState(isoDate) {
+  if (isHostExceptionDate(isoDate)) {
+    return;
+  }
+
   const state = getDateAvailabilityState(isoDate);
 
   if (state === "unspecified") {
@@ -408,11 +427,19 @@ function renderUnavailabilityPicker(eventStartDate, eventEndDate) {
         return ["fc-day-out-of-range"];
       }
 
+      if (isHostExceptionDate(isoDate)) {
+        return ["fc-day-host-exception"];
+      }
+
       return [getDateAvailabilityClass(isoDate)];
     },
     dateClick: (info) => {
       const isoDate = info.dateStr;
       if (!isDateWithinRange(isoDate, currentEventStartDate, currentEventEndDate)) {
+        return;
+      }
+
+      if (isHostExceptionDate(isoDate)) {
         return;
       }
 
@@ -434,6 +461,20 @@ function renderUnavailabilityPicker(eventStartDate, eventEndDate) {
  * @param {Array<string>} availableDates Dates disponibles.
  * @param {boolean} usesThreeState Indique si le modèle à trois états est actif.
  */
+function applyHostExceptionDates(exceptionDates) {
+  hostExceptionDatesSet = new Set();
+  if (!Array.isArray(exceptionDates)) {
+    return;
+  }
+
+  for (const date of exceptionDates) {
+    const isoDate = String(date || "");
+    if (isDateWithinRange(isoDate, currentEventStartDate, currentEventEndDate)) {
+      hostExceptionDatesSet.add(isoDate);
+    }
+  }
+}
+
 function applyAvailabilitySelection(unavailableDates, availableDates, usesThreeState) {
   const nextUnavailableSet = new Set();
   const nextAvailableSet = new Set();
@@ -441,7 +482,10 @@ function applyAvailabilitySelection(unavailableDates, availableDates, usesThreeS
   if (Array.isArray(unavailableDates)) {
     for (const date of unavailableDates) {
       const isoDate = String(date || "");
-      if (isDateWithinRange(isoDate, currentEventStartDate, currentEventEndDate)) {
+      if (
+        isDateWithinRange(isoDate, currentEventStartDate, currentEventEndDate) &&
+        !isHostExceptionDate(isoDate)
+      ) {
         nextUnavailableSet.add(isoDate);
       }
     }
@@ -450,13 +494,16 @@ function applyAvailabilitySelection(unavailableDates, availableDates, usesThreeS
   if (usesThreeState && Array.isArray(availableDates)) {
     for (const date of availableDates) {
       const isoDate = String(date || "");
-      if (isDateWithinRange(isoDate, currentEventStartDate, currentEventEndDate)) {
+      if (
+        isDateWithinRange(isoDate, currentEventStartDate, currentEventEndDate) &&
+        !isHostExceptionDate(isoDate)
+      ) {
         nextAvailableSet.add(isoDate);
       }
     }
   } else if (nextUnavailableSet.size > 0) {
     for (const isoDate of buildDateRange(currentEventStartDate, currentEventEndDate)) {
-      if (!nextUnavailableSet.has(isoDate)) {
+      if (!nextUnavailableSet.has(isoDate) && !isHostExceptionDate(isoDate)) {
         nextAvailableSet.add(isoDate);
       }
     }
@@ -482,10 +529,14 @@ function clearAvailabilitySelection() {
  * @returns {{ unavailableDates: Array<string>, availableDates: Array<string> }} Sélection courante.
  */
 function collectSelectedAvailability() {
-  return {
-    unavailableDates: Array.from(unavailableDatesSet).sort(),
-    availableDates: Array.from(availableDatesSet).sort(),
-  };
+  const unavailableDates = Array.from(unavailableDatesSet)
+    .filter((isoDate) => !isHostExceptionDate(isoDate))
+    .sort();
+  const availableDates = Array.from(availableDatesSet)
+    .filter((isoDate) => !isHostExceptionDate(isoDate))
+    .sort();
+
+  return { unavailableDates, availableDates };
 }
 
 /**
@@ -605,6 +656,10 @@ if (!syncerId) {
 
       setTextById("syncer-name", String(syncer.name || "-"));
       renderSyncerPeriod(syncer.eventStartDate || null, syncer.eventEndDate || null);
+      const exceptionDates = Array.isArray(syncer.exceptionDates) ? syncer.exceptionDates : [];
+      currentEventStartDate = String(syncer.eventStartDate || "");
+      currentEventEndDate = String(syncer.eventEndDate || "");
+      applyHostExceptionDates(exceptionDates);
       renderUnavailabilityPicker(syncer.eventStartDate || null, syncer.eventEndDate || null);
       fillParticipantBubbles(participants);
 
@@ -816,11 +871,17 @@ function updateCalendarDayClasses() {
       "fc-day-available",
       "fc-day-unavailable",
       "fc-day-unspecified",
-      "fc-day-out-of-range"
+      "fc-day-out-of-range",
+      "fc-day-host-exception"
     );
 
     if (!isDateWithinRange(isoDate, currentEventStartDate, currentEventEndDate)) {
       cell.classList.add("fc-day-out-of-range");
+      continue;
+    }
+
+    if (isHostExceptionDate(isoDate)) {
+      cell.classList.add("fc-day-host-exception");
       continue;
     }
 
