@@ -133,7 +133,9 @@ Chaque synchroniseur est stocké dans son propre fichier JSON : `data/syncers/{s
     {
       "id": "p1",
       "name": "Jean",
-      "unavailableDates": ["2026-04-24", "2026-04-25"]
+      "unavailableDates": ["2026-04-24", "2026-04-25"],
+      "availableDates": ["2026-05-01"],
+      "availabilityModel": "three-state"
     }
   ],
   "eventStartDate": "2026-05-01",

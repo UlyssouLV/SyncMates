@@ -92,9 +92,69 @@ function setUnavailabilitiesFeedback(message, isError) {
 }
 
 let unavailableDatesSet = new Set();
+let availableDatesSet = new Set();
 let currentEventStartDate = "";
 let currentEventEndDate = "";
 let participantCalendar = null;
+
+/**
+ * Retourne l'état d'une date dans la grille participant.
+ *
+ * @param {string} isoDate Date ISO (YYYY-MM-DD).
+ * @returns {"unspecified"|"available"|"unavailable"} État courant.
+ */
+function getDateAvailabilityState(isoDate) {
+  if (unavailableDatesSet.has(isoDate)) {
+    return "unavailable";
+  }
+
+  if (availableDatesSet.has(isoDate)) {
+    return "available";
+  }
+
+  return "unspecified";
+}
+
+/**
+ * Retourne la classe CSS associée à l'état d'une date.
+ *
+ * @param {string} isoDate Date ISO (YYYY-MM-DD).
+ * @returns {string} Classe CSS FullCalendar.
+ */
+function getDateAvailabilityClass(isoDate) {
+  const state = getDateAvailabilityState(isoDate);
+  if (state === "unavailable") {
+    return "fc-day-unavailable";
+  }
+
+  if (state === "available") {
+    return "fc-day-available";
+  }
+
+  return "fc-day-unspecified";
+}
+
+/**
+ * Fait défiler l'état d'une date: non renseigné -> indisponible -> disponible -> non renseigné.
+ *
+ * @param {string} isoDate Date ISO (YYYY-MM-DD).
+ */
+function cycleDateAvailabilityState(isoDate) {
+  const state = getDateAvailabilityState(isoDate);
+
+  if (state === "unspecified") {
+    unavailableDatesSet.add(isoDate);
+    return;
+  }
+
+  if (state === "unavailable") {
+    unavailableDatesSet.delete(isoDate);
+    availableDatesSet.add(isoDate);
+    return;
+  }
+
+  availableDatesSet.delete(isoDate);
+}
 
 /**
  * Appelle l'API pour récupérer les profils participants d'un Syncer.
@@ -296,6 +356,7 @@ function renderUnavailabilityPicker(eventStartDate, eventEndDate) {
   currentEventStartDate = String(eventStartDate || "");
   currentEventEndDate = String(eventEndDate || "");
   unavailableDatesSet = new Set();
+  availableDatesSet = new Set();
 
   if (dates.length === 0) {
     pickerElement.innerHTML =
@@ -347,11 +408,7 @@ function renderUnavailabilityPicker(eventStartDate, eventEndDate) {
         return ["fc-day-out-of-range"];
       }
 
-      if (unavailableDatesSet.has(isoDate)) {
-        return ["fc-day-unavailable"];
-      }
-
-      return ["fc-day-available"];
+      return [getDateAvailabilityClass(isoDate)];
     },
     dateClick: (info) => {
       const isoDate = info.dateStr;
@@ -359,12 +416,7 @@ function renderUnavailabilityPicker(eventStartDate, eventEndDate) {
         return;
       }
 
-      if (unavailableDatesSet.has(isoDate)) {
-        unavailableDatesSet.delete(isoDate);
-      } else {
-        unavailableDatesSet.add(isoDate);
-      }
-
+      cycleDateAvailabilityState(isoDate);
       updateCalendarDayClasses();
     },
   });
@@ -376,32 +428,64 @@ function renderUnavailabilityPicker(eventStartDate, eventEndDate) {
 }
 
 /**
- * Coche les dates indisponibles passées en entrée.
+ * Applique les disponibilités chargées depuis l'API.
  *
  * @param {Array<string>} unavailableDates Dates indisponibles.
+ * @param {Array<string>} availableDates Dates disponibles.
+ * @param {boolean} usesThreeState Indique si le modèle à trois états est actif.
  */
-function applyUnavailableDatesSelection(unavailableDates) {
-  const nextSet = new Set();
+function applyAvailabilitySelection(unavailableDates, availableDates, usesThreeState) {
+  const nextUnavailableSet = new Set();
+  const nextAvailableSet = new Set();
+
   if (Array.isArray(unavailableDates)) {
     for (const date of unavailableDates) {
       const isoDate = String(date || "");
       if (isDateWithinRange(isoDate, currentEventStartDate, currentEventEndDate)) {
-        nextSet.add(isoDate);
+        nextUnavailableSet.add(isoDate);
       }
     }
   }
 
-  unavailableDatesSet = nextSet;
+  if (usesThreeState && Array.isArray(availableDates)) {
+    for (const date of availableDates) {
+      const isoDate = String(date || "");
+      if (isDateWithinRange(isoDate, currentEventStartDate, currentEventEndDate)) {
+        nextAvailableSet.add(isoDate);
+      }
+    }
+  } else if (nextUnavailableSet.size > 0) {
+    for (const isoDate of buildDateRange(currentEventStartDate, currentEventEndDate)) {
+      if (!nextUnavailableSet.has(isoDate)) {
+        nextAvailableSet.add(isoDate);
+      }
+    }
+  }
+
+  unavailableDatesSet = nextUnavailableSet;
+  availableDatesSet = nextAvailableSet;
   updateCalendarDayClasses();
 }
 
 /**
- * Récupère la liste des dates cochées dans la grille.
- *
- * @returns {Array<string>} Dates indisponibles sélectionnées.
+ * Réinitialise toutes les dates à l'état non renseigné.
  */
-function collectSelectedUnavailableDates() {
-  return Array.from(unavailableDatesSet).sort();
+function clearAvailabilitySelection() {
+  unavailableDatesSet = new Set();
+  availableDatesSet = new Set();
+  updateCalendarDayClasses();
+}
+
+/**
+ * Récupère les listes de dates sélectionnées dans la grille.
+ *
+ * @returns {{ unavailableDates: Array<string>, availableDates: Array<string> }} Sélection courante.
+ */
+function collectSelectedAvailability() {
+  return {
+    unavailableDates: Array.from(unavailableDatesSet).sort(),
+    availableDates: Array.from(availableDatesSet).sort(),
+  };
 }
 
 /**
@@ -451,10 +535,16 @@ async function fetchParticipantUnavailabilities(currentSyncerId, participantId) 
  * @param {string} currentSyncerId Identifiant du Syncer.
  * @param {string} participantId Identifiant du participant.
  * @param {Array<string>} unavailableDates Dates indisponibles.
+ * @param {Array<string>} availableDates Dates disponibles.
  * @returns {Promise<Object>} Réponse JSON de l'API.
  * @throws {Error} Si la réponse API est en erreur.
  */
-async function saveParticipantUnavailabilities(currentSyncerId, participantId, unavailableDates) {
+async function saveParticipantUnavailabilities(
+  currentSyncerId,
+  participantId,
+  unavailableDates,
+  availableDates
+) {
   const response = await fetch(
     `/api/syncers/${encodeURIComponent(currentSyncerId)}/participants/${encodeURIComponent(
       participantId
@@ -466,6 +556,7 @@ async function saveParticipantUnavailabilities(currentSyncerId, participantId, u
       },
       body: JSON.stringify({
         unavailableDates,
+        availableDates,
       }),
     }
   );
@@ -566,7 +657,11 @@ if (participantSelectionForm && participantIdInput instanceof HTMLInputElement) 
       const unavailableDates = Array.isArray(result?.participant?.unavailableDates)
         ? result.participant.unavailableDates
         : [];
-      applyUnavailableDatesSelection(unavailableDates);
+      const availableDates = Array.isArray(result?.participant?.availableDates)
+        ? result.participant.availableDates
+        : [];
+      const usesThreeState = result?.participant?.availabilityModel === "three-state";
+      applyAvailabilitySelection(unavailableDates, availableDates, usesThreeState);
       setUnavailabilitiesFeedback("Indisponibilités chargées.", false);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
@@ -584,8 +679,7 @@ if (changeProfileButton) {
 const clearUnavailabilitiesButton = document.getElementById("clear-unavailabilities-button");
 if (clearUnavailabilitiesButton) {
   clearUnavailabilitiesButton.addEventListener("click", () => {
-    unavailableDatesSet = new Set();
-    updateCalendarDayClasses();
+    clearAvailabilitySelection();
   });
 }
 
@@ -603,19 +697,24 @@ if (participantUnavailabilitiesForm) {
       return;
     }
 
-    const unavailableDates = collectSelectedUnavailableDates();
+    const { unavailableDates, availableDates } = collectSelectedAvailability();
     setUnavailabilitiesFeedback("Enregistrement en cours...", false);
 
     try {
       const result = await saveParticipantUnavailabilities(
         syncerId,
         selectedParticipantId,
-        unavailableDates
+        unavailableDates,
+        availableDates
       );
       const savedUnavailableDates = Array.isArray(result?.participant?.unavailableDates)
         ? result.participant.unavailableDates
         : [];
-      applyUnavailableDatesSelection(savedUnavailableDates);
+      const savedAvailableDates = Array.isArray(result?.participant?.availableDates)
+        ? result.participant.availableDates
+        : [];
+      const usesThreeState = result?.participant?.availabilityModel === "three-state";
+      applyAvailabilitySelection(savedUnavailableDates, savedAvailableDates, usesThreeState);
       setUnavailabilitiesFeedback("Indisponibilités enregistrées.", false);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
@@ -719,19 +818,19 @@ function updateCalendarDayClasses() {
     }
 
     const isoDate = String(cell.dataset.date || "");
-    cell.classList.remove("fc-day-available", "fc-day-unavailable", "fc-day-out-of-range");
+    cell.classList.remove(
+      "fc-day-available",
+      "fc-day-unavailable",
+      "fc-day-unspecified",
+      "fc-day-out-of-range"
+    );
 
     if (!isDateWithinRange(isoDate, currentEventStartDate, currentEventEndDate)) {
       cell.classList.add("fc-day-out-of-range");
       continue;
     }
 
-    if (unavailableDatesSet.has(isoDate)) {
-      cell.classList.add("fc-day-unavailable");
-      continue;
-    }
-
-    cell.classList.add("fc-day-available");
+    cell.classList.add(getDateAvailabilityClass(isoDate));
   }
 }
 

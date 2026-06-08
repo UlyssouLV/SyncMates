@@ -109,12 +109,16 @@
   border-color: var(--primary-dark);
 }
 
+.page-participant .fc .fc-daygrid-day.fc-day-unspecified .fc-daygrid-day-frame {
+  background: #e4e9f2;
+}
+
 .page-participant .fc .fc-daygrid-day.fc-day-available .fc-daygrid-day-frame {
   background: #9dd4b0;
 }
 
 .page-participant .fc .fc-daygrid-day.fc-day-unavailable .fc-daygrid-day-frame {
-  background: #fde8e8;
+  background: #e89494;
 }
 
 .page-participant .fc .fc-daygrid-day.fc-day-out-of-range .fc-daygrid-day-frame {

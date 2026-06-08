@@ -155,6 +155,8 @@ function addParticipantToSyncer(string $syncerId, string $participantName): arra
         'id' => generateParticipantId(),
         'name' => $trimmedParticipantName,
         'unavailableDates' => [],
+        'availableDates' => [],
+        'availabilityModel' => 'three-state',
     ];
 
     $syncer['participants'] = $participants;
@@ -236,7 +238,7 @@ function getSyncerParticipantsPayload(string $syncerId): array
  * @param string $syncerId      Identifiant technique du Syncer.
  * @param string $participantId Identifiant du participant.
  *
- * @return array Données participant (id, name, unavailableDates).
+ * @return array Données participant (id, name, unavailableDates, availableDates, availabilityModel).
  *
  * @throws InvalidArgumentException Si les identifiants sont invalides.
  * @throws DomainException          Si le Syncer/participant est introuvable.
@@ -268,31 +270,31 @@ function getParticipantUnavailabilities(string $syncerId, string $participantId)
             continue;
         }
 
-        return [
-            'id' => $currentParticipantId,
-            'name' => isset($participant['name']) ? (string) $participant['name'] : '',
-            'unavailableDates' => isset($participant['unavailableDates']) && is_array($participant['unavailableDates'])
-                ? array_values($participant['unavailableDates'])
-                : [],
-        ];
+        return buildParticipantAvailabilityPayload($participant);
     }
 
     throw new DomainException('Participant introuvable.');
 }
 
 /**
- * Enregistre les indisponibilités d'un participant.
+ * Enregistre les disponibilités d'un participant.
  *
  * @param string $syncerId         Identifiant technique du Syncer.
  * @param string $participantId    Identifiant du participant.
  * @param array  $unavailableDates Liste des dates indisponibles (YYYY-MM-DD).
+ * @param array  $availableDates   Liste des dates disponibles (YYYY-MM-DD).
  *
  * @return array Données participant mises à jour.
  *
  * @throws InvalidArgumentException Si les paramètres sont invalides.
  * @throws DomainException          Si le Syncer/participant est introuvable.
  */
-function updateParticipantUnavailabilities(string $syncerId, string $participantId, array $unavailableDates): array
+function updateParticipantUnavailabilities(
+    string $syncerId,
+    string $participantId,
+    array $unavailableDates,
+    array $availableDates = []
+): array
 {
     $trimmedSyncerId = trim($syncerId);
     $trimmedParticipantId = trim($participantId);
@@ -315,16 +317,20 @@ function updateParticipantUnavailabilities(string $syncerId, string $participant
         throw new DomainException('La période de l\'évènement n\'est pas configurée.');
     }
 
-    $normalizedDates = [];
-    foreach ($unavailableDates as $date) {
-        $currentDate = trim((string) $date);
-        if (!isValidIsoDate($currentDate)) {
-            throw new InvalidArgumentException('Chaque date doit respecter le format YYYY-MM-DD.');
-        }
-        if ($currentDate < $eventStartDate || $currentDate > $eventEndDate) {
-            throw new InvalidArgumentException('Les dates doivent rester dans la plage de l\'évènement.');
-        }
-        $normalizedDates[$currentDate] = true;
+    $normalizedUnavailableDates = normalizeParticipantDateList(
+        $unavailableDates,
+        $eventStartDate,
+        $eventEndDate
+    );
+    $normalizedAvailableDates = normalizeParticipantDateList(
+        $availableDates,
+        $eventStartDate,
+        $eventEndDate
+    );
+
+    $overlapDates = array_intersect($normalizedUnavailableDates, $normalizedAvailableDates);
+    if (count($overlapDates) > 0) {
+        throw new InvalidArgumentException('Une date ne peut pas être à la fois disponible et indisponible.');
     }
 
     $participants = isset($syncer['participants']) && is_array($syncer['participants'])
@@ -338,12 +344,10 @@ function updateParticipantUnavailabilities(string $syncerId, string $participant
             continue;
         }
 
-        $participant['unavailableDates'] = array_keys($normalizedDates);
-        $updatedParticipant = [
-            'id' => $currentParticipantId,
-            'name' => isset($participant['name']) ? (string) $participant['name'] : '',
-            'unavailableDates' => $participant['unavailableDates'],
-        ];
+        $participant['unavailableDates'] = $normalizedUnavailableDates;
+        $participant['availableDates'] = $normalizedAvailableDates;
+        $participant['availabilityModel'] = 'three-state';
+        $updatedParticipant = buildParticipantAvailabilityPayload($participant);
         break;
     }
     unset($participant);
@@ -476,7 +480,7 @@ function isValidIsoDate(string $date): bool
  *
  * Le calcul est basé sur:
  * - la plage eventStartDate/eventEndDate,
- * - les unavailableDates de chaque participant.
+ * - les unavailableDates et availableDates de chaque participant.
  *
  * @param string $syncerId Identifiant technique du Syncer.
  *
@@ -513,33 +517,37 @@ function getSyncerResults(string $syncerId): array
 
     $participantSummaries = [];
     foreach ($participants as $participant) {
-        $participantSummaries[] = [
-            'id' => isset($participant['id']) ? (string) $participant['id'] : '',
-            'name' => isset($participant['name']) ? (string) $participant['name'] : '',
-            'unavailableDates' => isset($participant['unavailableDates']) && is_array($participant['unavailableDates'])
-                ? array_values($participant['unavailableDates'])
-                : [],
-        ];
+        $participantSummaries[] = buildParticipantAvailabilityPayload($participant);
     }
 
     $dailyAvailability = [];
     $currentDate = $eventStartDate;
     while ($currentDate <= $eventEndDate) {
+        $availableCount = 0;
         $unavailableCount = 0;
+        $unspecifiedCount = 0;
         $unavailableParticipants = [];
+        $unspecifiedParticipants = [];
 
         foreach ($participants as $participant) {
             $name = isset($participant['name']) ? (string) $participant['name'] : 'Participant';
-            $unavailableDates = isset($participant['unavailableDates']) && is_array($participant['unavailableDates'])
-                ? $participant['unavailableDates']
-                : [];
-            if (in_array($currentDate, $unavailableDates, true)) {
+            $dateState = resolveParticipantDateState($participant, $currentDate);
+
+            if ($dateState === 'unavailable') {
                 $unavailableCount++;
                 $unavailableParticipants[] = $name;
+                continue;
             }
+
+            if ($dateState === 'available') {
+                $availableCount++;
+                continue;
+            }
+
+            $unspecifiedCount++;
+            $unspecifiedParticipants[] = $name;
         }
 
-        $availableCount = max(0, $totalParticipants - $unavailableCount);
         $availabilityRate = $totalParticipants > 0
             ? round(($availableCount / $totalParticipants) * 100, 2)
             : 0.0;
@@ -548,8 +556,10 @@ function getSyncerResults(string $syncerId): array
             'date' => $currentDate,
             'availableCount' => $availableCount,
             'unavailableCount' => $unavailableCount,
+            'unspecifiedCount' => $unspecifiedCount,
             'availabilityRate' => $availabilityRate,
             'unavailableParticipants' => $unavailableParticipants,
+            'unspecifiedParticipants' => $unspecifiedParticipants,
         ];
 
         $currentDate = date('Y-m-d', strtotime($currentDate . ' +1 day'));
@@ -588,5 +598,99 @@ function getSyncerResults(string $syncerId): array
         'bestDates' => $bestDates,
         'dailyAvailability' => $dailyAvailability,
     ];
+}
+
+/**
+ * Indique si un participant utilise le modèle à trois états.
+ *
+ * @param array $participant Données participant.
+ */
+function participantUsesThreeStateAvailability(array $participant): bool
+{
+    return isset($participant['availabilityModel'])
+        && (string) $participant['availabilityModel'] === 'three-state';
+}
+
+/**
+ * Normalise une liste de dates participant dans la plage de l'évènement.
+ *
+ * @param array  $dates            Dates brutes.
+ * @param string $eventStartDate   Début de plage.
+ * @param string $eventEndDate     Fin de plage.
+ *
+ * @return array Dates uniques triées (YYYY-MM-DD).
+ */
+function normalizeParticipantDateList(array $dates, string $eventStartDate, string $eventEndDate): array
+{
+    $normalizedDates = [];
+    foreach ($dates as $date) {
+        $currentDate = trim((string) $date);
+        if (!isValidIsoDate($currentDate)) {
+            throw new InvalidArgumentException('Chaque date doit respecter le format YYYY-MM-DD.');
+        }
+        if ($currentDate < $eventStartDate || $currentDate > $eventEndDate) {
+            throw new InvalidArgumentException('Les dates doivent rester dans la plage de l\'évènement.');
+        }
+        $normalizedDates[$currentDate] = true;
+    }
+
+    $result = array_keys($normalizedDates);
+    sort($result);
+
+    return $result;
+}
+
+/**
+ * Construit le payload public des disponibilités d'un participant.
+ *
+ * @param array $participant Données participant brutes.
+ *
+ * @return array Données normalisées pour l'API.
+ */
+function buildParticipantAvailabilityPayload(array $participant): array
+{
+    return [
+        'id' => isset($participant['id']) ? (string) $participant['id'] : '',
+        'name' => isset($participant['name']) ? (string) $participant['name'] : '',
+        'unavailableDates' => isset($participant['unavailableDates']) && is_array($participant['unavailableDates'])
+            ? array_values($participant['unavailableDates'])
+            : [],
+        'availableDates' => isset($participant['availableDates']) && is_array($participant['availableDates'])
+            ? array_values($participant['availableDates'])
+            : [],
+        'availabilityModel' => participantUsesThreeStateAvailability($participant) ? 'three-state' : 'legacy',
+    ];
+}
+
+/**
+ * Résout l'état d'un participant pour une date donnée.
+ *
+ * @param array  $participant Données participant.
+ * @param string $currentDate Date testée (YYYY-MM-DD).
+ *
+ * @return string unavailable|available|unspecified
+ */
+function resolveParticipantDateState(array $participant, string $currentDate): string
+{
+    $unavailableDates = isset($participant['unavailableDates']) && is_array($participant['unavailableDates'])
+        ? $participant['unavailableDates']
+        : [];
+    if (in_array($currentDate, $unavailableDates, true)) {
+        return 'unavailable';
+    }
+
+    $availableDates = isset($participant['availableDates']) && is_array($participant['availableDates'])
+        ? $participant['availableDates']
+        : [];
+    if (in_array($currentDate, $availableDates, true)) {
+        return 'available';
+    }
+
+    if (participantUsesThreeStateAvailability($participant)) {
+        return 'unspecified';
+    }
+
+    // Ancien modèle: absence de l'indisponible = disponible.
+    return 'available';
 }
 

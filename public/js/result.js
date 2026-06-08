@@ -125,7 +125,8 @@ function renderBestDates(bestDates) {
     const availableCount = Number(dateItem?.availableCount || 0);
     const unavailableCount = Number(dateItem?.unavailableCount || 0);
     const availabilityRate = Number(dateItem?.availabilityRate || 0);
-    li.textContent = `${date} - ${availableCount} dispo / ${unavailableCount} indispo (${availabilityRate}%)`;
+    const unspecifiedCount = Number(dateItem?.unspecifiedCount || 0);
+    li.textContent = `${date} - ${availableCount} dispo / ${unavailableCount} indispo / ${unspecifiedCount} non renseigné (${availabilityRate}%)`;
     listElement.appendChild(li);
   }
 }
@@ -143,7 +144,7 @@ function renderDailyAvailabilityTable(dailyAvailability) {
 
   tableBody.innerHTML = "";
   if (!Array.isArray(dailyAvailability) || dailyAvailability.length === 0) {
-    tableBody.innerHTML = "<tr><td colspan=\"4\">Aucune donnée de disponibilité à afficher.</td></tr>";
+    tableBody.innerHTML = "<tr><td colspan=\"5\">Aucune donnée de disponibilité à afficher.</td></tr>";
     return;
   }
 
@@ -153,6 +154,7 @@ function renderDailyAvailabilityTable(dailyAvailability) {
     const date = String(row?.date || "-");
     const availableCount = Number(row?.availableCount || 0);
     const unavailableCount = Number(row?.unavailableCount || 0);
+    const unspecifiedCount = Number(row?.unspecifiedCount || 0);
     const availabilityRate = Number(row?.availabilityRate || 0);
 
     const dateTd = document.createElement("td");
@@ -166,6 +168,10 @@ function renderDailyAvailabilityTable(dailyAvailability) {
     const unavailableTd = document.createElement("td");
     unavailableTd.textContent = String(unavailableCount);
     tr.appendChild(unavailableTd);
+
+    const unspecifiedTd = document.createElement("td");
+    unspecifiedTd.textContent = String(unspecifiedCount);
+    tr.appendChild(unspecifiedTd);
 
     const rateTd = document.createElement("td");
     rateTd.textContent = `${availabilityRate}%`;
@@ -198,7 +204,10 @@ function renderParticipantsSummary(participants) {
     const unavailableDates = Array.isArray(participant?.unavailableDates)
       ? participant.unavailableDates
       : [];
-    li.textContent = `${name} - ${unavailableDates.length} indisponibilité(s)`;
+    const availableDates = Array.isArray(participant?.availableDates)
+      ? participant.availableDates
+      : [];
+    li.textContent = `${name} - ${availableDates.length} dispo / ${unavailableDates.length} indispo`;
     listElement.appendChild(li);
   }
 }
