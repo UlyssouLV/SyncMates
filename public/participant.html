@@ -28,13 +28,16 @@
       <section>
         <h2>Ton profil</h2>
         <form id="participant-selection-form" method="post" action="#">
-          <div id="participant-select-controls">
-            <label id="participant-select-label" for="participant-select">Choisir mon profil</label>
-            <select id="participant-select" name="participantId" required>
-              <option value="">-- Choisir --</option>
-            </select>
+          <fieldset id="participant-select-controls">
+            <legend id="participant-select-label">Choisir mon profil</legend>
+            <div
+              id="participant-bubbles"
+              role="listbox"
+              aria-labelledby="participant-select-label"
+            ></div>
+            <input type="hidden" id="participant-id-input" name="participantId" value="" />
             <button type="submit" id="validate-profile-button">Valider mon profil</button>
-          </div>
+          </fieldset>
           <button type="button" id="change-profile-button" hidden>Changer de profil</button>
         </form>
         <p id="participant-selection-feedback" aria-live="polite"></p>

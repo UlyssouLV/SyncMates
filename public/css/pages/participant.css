@@ -1,5 +1,71 @@
-.page-participant #participant-select {
-  max-width: 360px;
+.page-participant #participant-select-controls {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.page-participant #participant-select-controls legend {
+  padding: 0;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.page-participant #participant-bubbles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.page-participant .participant-bubble {
+  appearance: none;
+  border: 2px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 10px 18px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.page-participant .participant-bubble:hover:not(:disabled):not(.is-selected) {
+  border-color: var(--primary);
+  background: #dbe6ff;
+  color: var(--text);
+}
+
+.page-participant .participant-bubble.is-selected:hover:not(:disabled) {
+  border-color: var(--primary-dark);
+  background: var(--primary-dark);
+  color: #fff;
+}
+
+.page-participant .participant-bubble:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.page-participant .participant-bubble.is-selected {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(47, 92, 255, 0.22);
+}
+
+.page-participant .participant-bubble:disabled:not(.is-selected) {
+  display: none;
+}
+
+.page-participant .participant-bubble.is-selected:disabled {
+  cursor: default;
+  opacity: 1;
 }
 
 .page-participant #unavailability-picker {
@@ -44,7 +110,7 @@
 }
 
 .page-participant .fc .fc-daygrid-day.fc-day-available .fc-daygrid-day-frame {
-  background: #e8f7ee;
+  background: #9dd4b0;
 }
 
 .page-participant .fc .fc-daygrid-day.fc-day-unavailable .fc-daygrid-day-frame {

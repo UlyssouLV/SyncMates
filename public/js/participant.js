@@ -4,7 +4,7 @@
  * Ce fichier:
  * - récupère le syncerId depuis l'URL,
  * - charge les profils participants via l'API,
- * - alimente le select de sélection de profil,
+ * - affiche les bulles de sélection de profil,
  * - affiche les informations du Syncer,
  * - charge et enregistre les indisponibilités d'un profil.
  */
@@ -132,17 +132,46 @@ async function fetchSyncerParticipants(syncerId) {
 }
 
 /**
- * Alimente le select de profils participants.
+ * Met à jour la bulle de profil sélectionnée.
+ *
+ * @param {string} participantId Identifiant du participant choisi.
+ */
+function selectParticipantBubble(participantId) {
+  const hiddenInput = document.getElementById("participant-id-input");
+  const bubbles = document.querySelectorAll(".participant-bubble");
+
+  for (const bubble of bubbles) {
+    if (!(bubble instanceof HTMLButtonElement)) {
+      continue;
+    }
+
+    const isSelected = bubble.dataset.participantId === participantId;
+    bubble.classList.toggle("is-selected", isSelected);
+    bubble.setAttribute("aria-selected", isSelected ? "true" : "false");
+  }
+
+  if (hiddenInput instanceof HTMLInputElement) {
+    hiddenInput.value = participantId;
+  }
+}
+
+/**
+ * Affiche les profils participants sous forme de bulles cliquables.
  *
  * @param {Array<Object>} participants Liste de profils.
  */
-function fillParticipantSelect(participants) {
-  const selectElement = document.getElementById("participant-select");
-  if (!(selectElement instanceof HTMLSelectElement)) {
+function fillParticipantBubbles(participants) {
+  const bubblesContainer = document.getElementById("participant-bubbles");
+  const hiddenInput = document.getElementById("participant-id-input");
+  if (!bubblesContainer) {
     return;
   }
 
-  selectElement.innerHTML = '<option value="">-- Choisir --</option>';
+  bubblesContainer.innerHTML = "";
+  if (hiddenInput instanceof HTMLInputElement) {
+    hiddenInput.value = "";
+  }
+
   for (const participant of participants) {
     const participantId = String(participant?.id || "");
     const participantName = String(participant?.name || "");
@@ -150,10 +179,34 @@ function fillParticipantSelect(participants) {
       continue;
     }
 
-    const option = document.createElement("option");
-    option.value = participantId;
-    option.textContent = participantName;
-    selectElement.appendChild(option);
+    const bubble = document.createElement("button");
+    bubble.type = "button";
+    bubble.className = "participant-bubble";
+    bubble.dataset.participantId = participantId;
+    bubble.textContent = participantName;
+    bubble.setAttribute("role", "option");
+    bubble.setAttribute("aria-selected", "false");
+    bubble.addEventListener("click", () => {
+      selectParticipantBubble(participantId);
+    });
+    bubblesContainer.appendChild(bubble);
+  }
+}
+
+/**
+ * Verrouille la sélection de profil après validation.
+ *
+ * @param {string} participantId Identifiant du participant validé.
+ */
+function lockParticipantSelection(participantId) {
+  const bubbles = document.querySelectorAll(".participant-bubble");
+  for (const bubble of bubbles) {
+    if (!(bubble instanceof HTMLButtonElement)) {
+      continue;
+    }
+
+    bubble.disabled = true;
+    bubble.classList.toggle("is-selected", bubble.dataset.participantId === participantId);
   }
 }
 
@@ -440,7 +493,7 @@ async function saveParticipantUnavailabilities(currentSyncerId, participantId, u
 const syncerId = getQueryParam("syncerId");
 const participantSelectionForm = document.getElementById("participant-selection-form");
 const participantUnavailabilitiesForm = document.getElementById("participant-unavailabilities-form");
-const participantSelect = document.getElementById("participant-select");
+const participantIdInput = document.getElementById("participant-id-input");
 const participantSelectControls = document.getElementById("participant-select-controls");
 const participantSelectLabel = document.getElementById("participant-select-label");
 const validateProfileButton = document.getElementById("validate-profile-button");
@@ -462,7 +515,7 @@ if (!syncerId) {
       setTextById("syncer-name", String(syncer.name || "-"));
       renderSyncerPeriod(syncer.eventStartDate || null, syncer.eventEndDate || null);
       renderUnavailabilityPicker(syncer.eventStartDate || null, syncer.eventEndDate || null);
-      fillParticipantSelect(participants);
+      fillParticipantBubbles(participants);
 
       if (participants.length === 0) {
         setSelectionFeedback("Aucun profil participant n'est encore disponible.", true);
@@ -476,25 +529,22 @@ if (!syncerId) {
     });
 }
 
-if (participantSelectionForm && participantSelect instanceof HTMLSelectElement) {
+if (participantSelectionForm && participantIdInput instanceof HTMLInputElement) {
   participantSelectionForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const selectedOption = participantSelect.selectedOptions[0];
-    if (!selectedOption || !participantSelect.value) {
+    if (!participantIdInput.value) {
       setSelectionFeedback("Merci de choisir un profil.", true);
       return;
     }
 
-    selectedParticipantId = participantSelect.value;
+    selectedParticipantId = participantIdInput.value;
     setSelectionFeedback("", false);
 
     if (participantSelectLabel) {
       participantSelectLabel.hidden = true;
     }
-    if (participantSelect instanceof HTMLSelectElement) {
-      participantSelect.disabled = true;
-    }
+    lockParticipantSelection(selectedParticipantId);
     if (validateProfileButton) {
       validateProfileButton.hidden = true;
     }
