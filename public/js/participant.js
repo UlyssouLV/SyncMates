@@ -379,7 +379,7 @@ function renderUnavailabilityPicker(eventStartDate, eventEndDate) {
 
   if (dates.length === 0) {
     pickerElement.innerHTML =
-      "<p>Plage non configurée. Le host doit définir une date de début et de fin.</p>";
+      "<p>Plage non configurée. L'organisateur doit définir une date de début et de fin.</p>";
     return;
   }
 
@@ -404,8 +404,7 @@ function renderUnavailabilityPicker(eventStartDate, eventEndDate) {
     locale: "fr",
     firstDay: 1,
     fixedWeekCount: true,
-    height: 640,
-    expandRows: true,
+    ...getSyncMatesCalendarOptions(640),
     validRange: {
       start: currentEventStartDate,
       end: addOneDayIso(currentEventEndDate),
@@ -449,6 +448,7 @@ function renderUnavailabilityPicker(eventStartDate, eventEndDate) {
   });
 
   participantCalendar.render();
+  bindSyncMatesResponsiveCalendar(participantCalendar, 640);
   requestAnimationFrame(() => {
     updateCalendarDayClasses();
   });

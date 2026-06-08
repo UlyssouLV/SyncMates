@@ -82,7 +82,10 @@ function renderSyncerHeader(syncer, participantsCount) {
   if (!eventStartDate || !eventEndDate) {
     setTextById("syncer-period", "Non configurée");
   } else {
-    setTextById("syncer-period", `Du ${eventStartDate} au ${eventEndDate}`);
+    setTextById(
+      "syncer-period",
+      `Du ${formatHumanDate(eventStartDate)} au ${formatHumanDate(eventEndDate)}`
+    );
   }
   setTextById("participants-count", String(participantsCount || 0));
 }
@@ -288,7 +291,7 @@ function getResultsCalendarDayClass(isoDate) {
  */
 function buildDateScoreTitle(isoDate) {
   if (isHostExceptionDate(isoDate)) {
-    return "Jour exclu par le host";
+    return "Organisateur indisponible";
   }
 
   const row = resultsDailyAvailabilityByDate.get(isoDate);
@@ -317,7 +320,7 @@ function buildParticipantDateTitle(participant, isoDate) {
     return "";
   }
   if (dayClass === "fc-day-host-exception") {
-    return "Jour exclu par le host";
+    return "Organisateur indisponible";
   }
   if (dayClass === "fc-day-unavailable") {
     return "Indisponible";
@@ -329,6 +332,111 @@ function buildParticipantDateTitle(participant, isoDate) {
 }
 
 /**
+ * Retourne toutes les dates ISO de la plage de l'évènement.
+ *
+ * @returns {Array<string>} Dates dans la plage.
+ */
+function buildResultsEventDateRange() {
+  const dates = [];
+  if (!resultsEventStartDate || !resultsEventEndDate) {
+    return dates;
+  }
+
+  let currentDate = resultsEventStartDate;
+  while (currentDate <= resultsEventEndDate) {
+    dates.push(currentDate);
+    currentDate = addOneDayIso(currentDate);
+  }
+
+  return dates;
+}
+
+/**
+ * Retourne les classes de jour réellement affichées en vue globale.
+ *
+ * @returns {Set<string>} Classes CSS utilisées sur le calendrier.
+ */
+function collectAggregateLegendDayClasses() {
+  const usedClasses = new Set();
+  for (const isoDate of buildResultsEventDateRange()) {
+    const dayClass = getDateScoreClass(isoDate);
+    if (dayClass !== "fc-day-out-of-range") {
+      usedClasses.add(dayClass);
+    }
+  }
+  return usedClasses;
+}
+
+/**
+ * Retourne les classes de jour réellement affichées pour un participant.
+ *
+ * @param {Object} participant Données participant.
+ * @returns {Set<string>} Classes CSS utilisées sur le calendrier.
+ */
+function collectParticipantLegendDayClasses(participant) {
+  const usedClasses = new Set();
+  for (const isoDate of buildResultsEventDateRange()) {
+    const dayClass = getParticipantDateClass(participant, isoDate);
+    if (dayClass !== "fc-day-out-of-range") {
+      usedClasses.add(dayClass);
+    }
+  }
+  return usedClasses;
+}
+
+/**
+ * Affiche uniquement les entrées de légende présentes sur le calendrier.
+ *
+ * @param {boolean} isParticipantMode Indique si la vue participant est active.
+ */
+function updateResultsCalendarLegendItems(isParticipantMode) {
+  const aggregateLegend = document.getElementById("results-calendar-legend-aggregate");
+  if (aggregateLegend) {
+    const usedClasses = collectAggregateLegendDayClasses();
+    let visibleCount = 0;
+
+    for (const item of aggregateLegend.querySelectorAll("li[data-legend-day-class]")) {
+      if (!(item instanceof HTMLElement)) {
+        continue;
+      }
+
+      const dayClass = String(item.dataset.legendDayClass || "");
+      const isVisible = usedClasses.has(dayClass);
+      item.hidden = !isVisible;
+      if (isVisible) {
+        visibleCount += 1;
+      }
+    }
+
+    aggregateLegend.hidden = isParticipantMode || visibleCount === 0;
+  }
+
+  const participantLegend = document.getElementById("results-calendar-legend-participant");
+  if (participantLegend) {
+    const usedClasses =
+      isParticipantMode && resultsSelectedParticipant
+        ? collectParticipantLegendDayClasses(resultsSelectedParticipant)
+        : new Set();
+    let visibleCount = 0;
+
+    for (const item of participantLegend.querySelectorAll("li[data-legend-day-class]")) {
+      if (!(item instanceof HTMLElement)) {
+        continue;
+      }
+
+      const dayClass = String(item.dataset.legendDayClass || "");
+      const isVisible = usedClasses.has(dayClass);
+      item.hidden = !isVisible;
+      if (isVisible) {
+        visibleCount += 1;
+      }
+    }
+
+    participantLegend.hidden = !isParticipantMode || visibleCount === 0;
+  }
+}
+
+/**
  * Met à jour l'interface autour du calendrier selon le mode actif.
  */
 const RESULTS_CALENDAR_AGGREGATE_TITLE = "Top dates recommandées";
@@ -337,8 +445,6 @@ function updateResultsCalendarChrome() {
   const titleElement = document.getElementById("results-calendar-title");
   const introElement = document.getElementById("results-calendar-intro");
   const resetButton = document.getElementById("reset-calendar-view-button");
-  const aggregateLegend = document.getElementById("results-calendar-legend-aggregate");
-  const participantLegend = document.getElementById("results-calendar-legend-participant");
 
   const isParticipantMode =
     resultsCalendarMode === "participant" && resultsSelectedParticipant !== null;
@@ -355,12 +461,7 @@ function updateResultsCalendarChrome() {
   if (resetButton) {
     resetButton.hidden = !isParticipantMode;
   }
-  if (aggregateLegend) {
-    aggregateLegend.hidden = isParticipantMode;
-  }
-  if (participantLegend) {
-    participantLegend.hidden = !isParticipantMode;
-  }
+  updateResultsCalendarLegendItems(isParticipantMode);
 
   const calendarRoot = document.getElementById("results-calendar");
   if (calendarRoot) {
@@ -386,12 +487,14 @@ function formatHumanDate(isoDate) {
     return value;
   }
 
-  return parsed.toLocaleDateString("fr-FR", {
+  const formatted = parsed.toLocaleDateString("fr-FR", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   });
+
+  return formatted.replace(/(^|\s)(\p{L})/gu, (_, prefix, letter) => `${prefix}${letter.toUpperCase()}`);
 }
 
 /**
@@ -617,8 +720,7 @@ function renderBestDatesCalendar(syncer, dailyAvailability, bestDates) {
     locale: "fr",
     firstDay: 1,
     fixedWeekCount: true,
-    height: 640,
-    expandRows: true,
+    ...getSyncMatesCalendarOptions(640),
     validRange: {
       start: eventStartDate,
       end: addOneDayIso(eventEndDate),
@@ -656,6 +758,7 @@ function renderBestDatesCalendar(syncer, dailyAvailability, bestDates) {
   });
 
   resultsCalendar.render();
+  bindSyncMatesResponsiveCalendar(resultsCalendar, 640);
   calendarRoot.classList.add("results-calendar--aggregate");
   requestAnimationFrame(() => {
     updateResultsCalendarDayClasses();
@@ -824,10 +927,10 @@ const dayAvailabilityModal = document.getElementById("day-availability-modal");
 if (dayAvailabilityModal) {
   dayAvailabilityModal.addEventListener("click", (event) => {
     const target = event.target;
-    if (!(target instanceof HTMLElement)) {
+    if (!(target instanceof Element)) {
       return;
     }
-    if (target.hasAttribute("data-modal-close")) {
+    if (target.closest("[data-modal-close]")) {
       closeDayAvailabilityModal();
     }
   });

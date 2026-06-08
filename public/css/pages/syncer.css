@@ -107,20 +107,22 @@
 
 @media (max-width: 780px) {
   .page-syncer #syncer-exception-calendar {
-    padding: 6px;
+    padding: 4px;
   }
 
-  .page-syncer .fc .fc-toolbar {
-    display: grid;
-    gap: 8px;
+  .page-syncer .prolonger-hint {
+    display: block;
+    width: fit-content;
+    margin: 6px 0 0;
   }
 
-  .page-syncer .fc .fc-toolbar-chunk {
-    display: flex;
-    justify-content: center;
+  .page-syncer #participants-list li {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .page-syncer .fc {
-    height: 560px !important;
+  .page-syncer #participants-list button {
+    width: 100%;
+    min-height: 44px;
   }
 }

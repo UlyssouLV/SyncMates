@@ -162,20 +162,29 @@
 
 @media (max-width: 780px) {
   .page-participant #participant-calendar {
-    padding: 6px;
+    padding: 4px;
   }
 
-  .page-participant .fc .fc-toolbar {
-    display: grid;
+  .page-participant #participant-bubbles {
     gap: 8px;
   }
 
-  .page-participant .fc .fc-toolbar-chunk {
-    display: flex;
+  .page-participant .participant-bubble {
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
+    min-height: 44px;
+    padding: 10px 16px;
+    flex: 1 1 calc(50% - 8px);
+    text-align: center;
   }
 
-  .page-participant .fc {
-    height: 560px !important;
+  .page-participant #validate-profile-button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .page-participant .fc .fc-daygrid-day:not(.fc-day-out-of-range):not(.fc-day-host-exception) {
+    cursor: pointer;
   }
 }

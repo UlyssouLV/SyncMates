@@ -320,8 +320,7 @@ function renderExceptionDatesCalendar(eventStartDate, eventEndDate, exceptionDat
     locale: "fr",
     firstDay: 1,
     fixedWeekCount: true,
-    height: 560,
-    expandRows: true,
+    ...getSyncMatesCalendarOptions(560),
     validRange: {
       start: syncerEventStartDate,
       end: addOneDayIso(syncerEventEndDate),
@@ -357,6 +356,7 @@ function renderExceptionDatesCalendar(eventStartDate, eventEndDate, exceptionDat
   });
 
   syncerExceptionCalendar.render();
+  bindSyncMatesResponsiveCalendar(syncerExceptionCalendar, 560);
   applyExceptionDatesSelection(exceptionDates);
 }
 
@@ -878,7 +878,7 @@ if (saveExceptionDatesButton) {
         ? result.syncer.exceptionDates
         : exceptionDates;
       applyExceptionDatesSelection(savedDates);
-      setExceptionDatesFeedback("Jours d'exception enregistrés.", false);
+      setExceptionDatesFeedback("Indisponibilités organisateur enregistrées.", false);
     } catch (error) {
       if (redirectToHostIfUnauthorized(error)) {
         return;

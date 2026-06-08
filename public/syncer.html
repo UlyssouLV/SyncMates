@@ -52,16 +52,16 @@
       </section>
 
       <section id="exception-dates-section">
-        <h2>Jours d'exception</h2>
+        <h2>Organisateur indisponible</h2>
         <p>
-          Clique sur les jours où tu ne peux pas organiser l'évènement. Les participants ne
-          pourront pas indiquer leur disponibilité sur ces dates.
+          Clique sur les jours où tu ne peux pas organiser l'évènement. Elles apparaîtront en noir
+          pour les participants, qui ne pourront pas indiquer leur disponibilité sur ces dates.
         </p>
         <div id="exception-dates-picker">
           <p>Configure d'abord la période de l'évènement.</p>
         </div>
         <p>
-          <button type="button" id="save-exception-dates-button">Enregistrer les exceptions</button>
+          <button type="button" id="save-exception-dates-button">Enregistrer</button>
         </p>
         <p id="exception-dates-feedback" aria-live="polite"></p>
       </section>
@@ -96,6 +96,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js" defer></script>
+    <script src="js/calendar-mobile.js" defer></script>
     <script src="js/maintenance.js" defer></script>
     <script src="js/syncer.js" defer></script>
   </body>

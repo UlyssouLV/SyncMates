@@ -46,12 +46,24 @@
           class="results-calendar-legend"
           aria-label="Légende du calendrier global"
         >
-          <li><span class="legend-swatch legend-best"></span> Meilleures dates</li>
-          <li><span class="legend-swatch legend-high"></span> Bonne disponibilité</li>
-          <li><span class="legend-swatch legend-medium"></span> Disponibilité moyenne</li>
-          <li><span class="legend-swatch legend-low"></span> Faible disponibilité</li>
-          <li><span class="legend-swatch legend-none"></span> Aucun disponible</li>
-          <li><span class="legend-swatch legend-host-exception"></span> Exclu par le host</li>
+          <li data-legend-day-class="fc-day-score-best">
+            <span class="legend-swatch legend-best"></span> Meilleures dates
+          </li>
+          <li data-legend-day-class="fc-day-score-high">
+            <span class="legend-swatch legend-high"></span> Bonne disponibilité
+          </li>
+          <li data-legend-day-class="fc-day-score-medium">
+            <span class="legend-swatch legend-medium"></span> Disponibilité moyenne
+          </li>
+          <li data-legend-day-class="fc-day-score-low">
+            <span class="legend-swatch legend-low"></span> Faible disponibilité
+          </li>
+          <li data-legend-day-class="fc-day-score-none">
+            <span class="legend-swatch legend-none"></span> Aucun disponible
+          </li>
+          <li data-legend-day-class="fc-day-host-exception">
+            <span class="legend-swatch legend-host-exception"></span> Organisateur indisponible
+          </li>
         </ul>
         <ul
           id="results-calendar-legend-participant"
@@ -59,10 +71,18 @@
           aria-label="Légende du calendrier participant"
           hidden
         >
-          <li><span class="legend-swatch legend-participant-available"></span> Disponible</li>
-          <li><span class="legend-swatch legend-participant-unavailable"></span> Indisponible</li>
-          <li><span class="legend-swatch legend-participant-unspecified"></span> Non renseigné</li>
-          <li><span class="legend-swatch legend-host-exception"></span> Exclu par le host</li>
+          <li data-legend-day-class="fc-day-available">
+            <span class="legend-swatch legend-participant-available"></span> Disponible
+          </li>
+          <li data-legend-day-class="fc-day-unavailable">
+            <span class="legend-swatch legend-participant-unavailable"></span> Indisponible
+          </li>
+          <li data-legend-day-class="fc-day-unspecified">
+            <span class="legend-swatch legend-participant-unspecified"></span> Non renseigné
+          </li>
+          <li data-legend-day-class="fc-day-host-exception">
+            <span class="legend-swatch legend-host-exception"></span> Organisateur indisponible
+          </li>
         </ul>
       </section>
 
@@ -148,6 +168,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js" defer></script>
+    <script src="js/calendar-mobile.js" defer></script>
     <script src="js/maintenance.js" defer></script>
     <script src="js/result.js" defer></script>
   </body>
