@@ -33,21 +33,6 @@ function setTextById(elementId, value) {
 }
 
 /**
- * Affiche un feedback utilisateur.
- *
- * @param {string} message Message à afficher.
- * @param {boolean} isError Indique si c'est une erreur.
- */
-function setResultsFeedback(message, isError) {
-  const feedbackElement = document.getElementById("results-feedback");
-  if (!feedbackElement) {
-    return;
-  }
-  feedbackElement.textContent = message;
-  feedbackElement.style.color = isError ? "crimson" : "green";
-}
-
-/**
  * Appelle l'API des résultats pour un Syncer.
  *
  * @param {string} syncerId Identifiant du Syncer.
@@ -102,35 +87,430 @@ function renderSyncerHeader(syncer, participantsCount) {
   setTextById("participants-count", String(participantsCount || 0));
 }
 
+let resultsCalendar = null;
+let resultsDailyAvailabilityByDate = new Map();
+let resultsBestDateSet = new Set();
+let resultsMaxAvailableCount = 0;
+let resultsEventStartDate = "";
+let resultsEventEndDate = "";
+let resultsCalendarMode = "aggregate";
+let resultsSelectedParticipant = null;
+let resultsParticipantsById = new Map();
+
 /**
- * Rend la liste des meilleures dates.
+ * Vérifie qu'une date ISO est dans la plage [start, end].
  *
- * @param {Array<Object>} bestDates Top des dates.
+ * @param {string} isoDate Date testée.
+ * @param {string} start Début de plage.
+ * @param {string} end Fin de plage.
+ * @returns {boolean} true si date valide et dans la plage.
  */
-function renderBestDates(bestDates) {
-  const listElement = document.getElementById("best-dates-list");
-  if (!listElement) {
-    return;
+function isDateWithinRange(isoDate, start, end) {
+  if (!isoDate || !start || !end) {
+    return false;
+  }
+  return isoDate >= start && isoDate <= end;
+}
+
+/**
+ * Convertit une date locale JS en format ISO (YYYY-MM-DD).
+ *
+ * @param {Date} date Date à convertir.
+ * @returns {string} Date ISO locale.
+ */
+function formatDateLocalIso(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Ajoute un jour à une date ISO (YYYY-MM-DD).
+ *
+ * @param {string} isoDate Date ISO d'entrée.
+ * @returns {string} Date ISO + 1 jour.
+ */
+function addOneDayIso(isoDate) {
+  const parts = String(isoDate || "").split("-");
+  if (parts.length !== 3) {
+    return isoDate;
   }
 
-  listElement.innerHTML = "";
-  if (!Array.isArray(bestDates) || bestDates.length === 0) {
-    listElement.innerHTML = "<li>Aucune date recommandée pour le moment.</li>";
-    return;
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+  const day = Number(parts[2]);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+    return isoDate;
   }
 
-  for (const dateItem of bestDates) {
-    const li = document.createElement("li");
-    const date = String(dateItem?.date || "-");
-    const availableCount = Number(dateItem?.availableCount || 0);
-    const unavailableCount = Number(dateItem?.unavailableCount || 0);
-    const availabilityRate = Number(dateItem?.availabilityRate || 0);
-    const unspecifiedCount = Number(dateItem?.unspecifiedCount || 0);
-    li.textContent = `${date} - ${availableCount} dispo / ${unavailableCount} indispo / ${unspecifiedCount} non renseigné (${availabilityRate}%)`;
-    listElement.appendChild(li);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + 1);
+  const nextYear = date.getUTCFullYear();
+  const nextMonth = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const nextDay = String(date.getUTCDate()).padStart(2, "0");
+  return `${nextYear}-${nextMonth}-${nextDay}`;
+}
+
+const RESULTS_CALENDAR_DAY_CLASSES = [
+  "fc-day-score-best",
+  "fc-day-score-high",
+  "fc-day-score-medium",
+  "fc-day-score-low",
+  "fc-day-score-none",
+  "fc-day-available",
+  "fc-day-unavailable",
+  "fc-day-unspecified",
+  "fc-day-out-of-range",
+];
+
+/**
+ * Retourne la classe CSS de score pour une date du calendrier global.
+ *
+ * @param {string} isoDate Date ISO (YYYY-MM-DD).
+ * @returns {string} Classe CSS.
+ */
+function getDateScoreClass(isoDate) {
+  if (!isDateWithinRange(isoDate, resultsEventStartDate, resultsEventEndDate)) {
+    return "fc-day-out-of-range";
+  }
+
+  const row = resultsDailyAvailabilityByDate.get(isoDate);
+  const availableCount = Number(row?.availableCount || 0);
+
+  if (resultsBestDateSet.has(isoDate) && availableCount > 0) {
+    return "fc-day-score-best";
+  }
+
+  if (resultsMaxAvailableCount === 0 || availableCount === 0) {
+    return "fc-day-score-none";
+  }
+
+  const ratio = availableCount / resultsMaxAvailableCount;
+  if (ratio >= 0.67) {
+    return "fc-day-score-high";
+  }
+  if (ratio >= 0.34) {
+    return "fc-day-score-medium";
+  }
+
+  return "fc-day-score-low";
+}
+
+/**
+ * Retourne la classe CSS pour une date d'un participant.
+ *
+ * @param {Object} participant Données participant.
+ * @param {string} isoDate Date ISO (YYYY-MM-DD).
+ * @returns {string} Classe CSS.
+ */
+function getParticipantDateClass(participant, isoDate) {
+  if (!isDateWithinRange(isoDate, resultsEventStartDate, resultsEventEndDate)) {
+    return "fc-day-out-of-range";
+  }
+
+  const unavailableDates = Array.isArray(participant?.unavailableDates)
+    ? participant.unavailableDates
+    : [];
+  const availableDates = Array.isArray(participant?.availableDates) ? participant.availableDates : [];
+
+  if (unavailableDates.includes(isoDate)) {
+    return "fc-day-unavailable";
+  }
+  if (availableDates.includes(isoDate)) {
+    return "fc-day-available";
+  }
+  if (participant?.availabilityModel === "three-state") {
+    return "fc-day-unspecified";
+  }
+
+  return "fc-day-available";
+}
+
+/**
+ * Retourne la classe CSS courante d'une cellule du calendrier résultats.
+ *
+ * @param {string} isoDate Date ISO (YYYY-MM-DD).
+ * @returns {string} Classe CSS.
+ */
+function getResultsCalendarDayClass(isoDate) {
+  if (resultsCalendarMode === "participant" && resultsSelectedParticipant) {
+    return getParticipantDateClass(resultsSelectedParticipant, isoDate);
+  }
+
+  return getDateScoreClass(isoDate);
+}
+
+/**
+ * Construit le titre affiché au survol d'un jour du calendrier global.
+ *
+ * @param {string} isoDate Date ISO (YYYY-MM-DD).
+ * @returns {string} Texte descriptif.
+ */
+function buildDateScoreTitle(isoDate) {
+  const row = resultsDailyAvailabilityByDate.get(isoDate);
+  if (!row) {
+    return "";
+  }
+
+  const availableCount = Number(row.availableCount || 0);
+  const unavailableCount = Number(row.unavailableCount || 0);
+  const unspecifiedCount = Number(row.unspecifiedCount || 0);
+  const availabilityRate = Number(row.availabilityRate || 0);
+
+  return `${availableCount} dispo / ${unavailableCount} indispo / ${unspecifiedCount} non renseigné (${availabilityRate}%)`;
+}
+
+/**
+ * Construit le titre affiché au survol d'un jour en mode participant.
+ *
+ * @param {Object} participant Données participant.
+ * @param {string} isoDate Date ISO (YYYY-MM-DD).
+ * @returns {string} Texte descriptif.
+ */
+function buildParticipantDateTitle(participant, isoDate) {
+  const dayClass = getParticipantDateClass(participant, isoDate);
+  if (dayClass === "fc-day-out-of-range") {
+    return "";
+  }
+  if (dayClass === "fc-day-unavailable") {
+    return "Indisponible";
+  }
+  if (dayClass === "fc-day-available") {
+    return "Disponible";
+  }
+  return "Non renseigné";
+}
+
+/**
+ * Met à jour l'interface autour du calendrier selon le mode actif.
+ */
+const RESULTS_CALENDAR_AGGREGATE_TITLE = "Top dates recommandées";
+
+function updateResultsCalendarChrome() {
+  const titleElement = document.getElementById("results-calendar-title");
+  const introElement = document.getElementById("results-calendar-intro");
+  const resetButton = document.getElementById("reset-calendar-view-button");
+  const aggregateLegend = document.getElementById("results-calendar-legend-aggregate");
+  const participantLegend = document.getElementById("results-calendar-legend-participant");
+
+  const isParticipantMode =
+    resultsCalendarMode === "participant" && resultsSelectedParticipant !== null;
+  const participantName = String(resultsSelectedParticipant?.name || "Participant");
+
+  if (titleElement) {
+    titleElement.textContent = isParticipantMode
+      ? `Calendrier de ${participantName}`
+      : RESULTS_CALENDAR_AGGREGATE_TITLE;
+  }
+  if (introElement) {
+    introElement.hidden = isParticipantMode;
+  }
+  if (resetButton) {
+    resetButton.hidden = !isParticipantMode;
+  }
+  if (aggregateLegend) {
+    aggregateLegend.hidden = isParticipantMode;
+  }
+  if (participantLegend) {
+    participantLegend.hidden = !isParticipantMode;
   }
 }
 
+/**
+ * Active visuellement le bouton du participant sélectionné.
+ *
+ * @param {string} participantId Identifiant du participant actif, ou chaîne vide.
+ */
+function updateParticipantButtonStates(participantId) {
+  const buttons = document.querySelectorAll(".show-participant-calendar-button");
+  for (const button of buttons) {
+    if (!(button instanceof HTMLButtonElement)) {
+      continue;
+    }
+
+    const isActive = Boolean(participantId) && button.dataset.participantId === participantId;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    button.textContent = isActive ? "Calendrier affiché" : "Voir le calendrier";
+  }
+}
+
+/**
+ * Affiche les disponibilités d'un participant sur le calendrier.
+ *
+ * @param {Object} participant Données participant.
+ */
+function showParticipantOnCalendar(participant) {
+  resultsCalendarMode = "participant";
+  resultsSelectedParticipant = participant;
+  updateResultsCalendarChrome();
+  updateParticipantButtonStates(String(participant?.id || ""));
+  updateResultsCalendarDayClasses();
+
+  const calendarSection = document.getElementById("results-calendar-section");
+  if (calendarSection) {
+    calendarSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+/**
+ * Reviens à la vue globale du calendrier.
+ */
+function resetResultsCalendarView() {
+  resultsCalendarMode = "aggregate";
+  resultsSelectedParticipant = null;
+  updateResultsCalendarChrome();
+  updateParticipantButtonStates("");
+  updateResultsCalendarDayClasses();
+}
+
+/**
+ * Applique les classes sur les cellules du calendrier résultats.
+ */
+function updateResultsCalendarDayClasses() {
+  if (resultsCalendar && typeof resultsCalendar.rerenderDates === "function") {
+    resultsCalendar.rerenderDates();
+  }
+
+  const dayCells = document.querySelectorAll("#results-calendar .fc-daygrid-day[data-date]");
+  for (const cell of dayCells) {
+    if (!(cell instanceof HTMLElement)) {
+      continue;
+    }
+
+    const isoDate = String(cell.dataset.date || "");
+    cell.classList.remove(...RESULTS_CALENDAR_DAY_CLASSES);
+    cell.classList.add(getResultsCalendarDayClass(isoDate));
+
+    if (resultsCalendarMode === "participant" && resultsSelectedParticipant) {
+      const title = buildParticipantDateTitle(resultsSelectedParticipant, isoDate);
+      if (title) {
+        cell.title = title;
+      } else {
+        cell.removeAttribute("title");
+      }
+      continue;
+    }
+
+    const title = buildDateScoreTitle(isoDate);
+    if (title) {
+      cell.title = title;
+    } else {
+      cell.removeAttribute("title");
+    }
+  }
+}
+
+/**
+ * Affiche le calendrier des meilleures dates avec un dégradé vert / jaune.
+ *
+ * @param {Object} syncer Données Syncer.
+ * @param {Array<Object>} dailyAvailability Disponibilités journalières.
+ * @param {Array<Object>} bestDates Top des dates.
+ */
+function renderBestDatesCalendar(syncer, dailyAvailability, bestDates) {
+  const pickerElement = document.getElementById("best-dates-calendar-picker");
+  if (!pickerElement) {
+    return;
+  }
+
+  const eventStartDate = String(syncer?.eventStartDate || "");
+  const eventEndDate = String(syncer?.eventEndDate || "");
+  resultsEventStartDate = eventStartDate;
+  resultsEventEndDate = eventEndDate;
+
+  resultsDailyAvailabilityByDate = new Map();
+  resultsBestDateSet = new Set();
+  resultsMaxAvailableCount = 0;
+
+  if (Array.isArray(dailyAvailability)) {
+    for (const row of dailyAvailability) {
+      const isoDate = String(row?.date || "");
+      if (!isoDate) {
+        continue;
+      }
+      resultsDailyAvailabilityByDate.set(isoDate, row);
+      resultsMaxAvailableCount = Math.max(
+        resultsMaxAvailableCount,
+        Number(row?.availableCount || 0)
+      );
+    }
+  }
+
+  if (Array.isArray(bestDates)) {
+    for (const row of bestDates) {
+      const isoDate = String(row?.date || "");
+      if (isoDate) {
+        resultsBestDateSet.add(isoDate);
+      }
+    }
+  }
+
+  resultsCalendarMode = "aggregate";
+  resultsSelectedParticipant = null;
+  updateResultsCalendarChrome();
+  updateParticipantButtonStates("");
+
+  if (!eventStartDate || !eventEndDate) {
+    pickerElement.innerHTML =
+      "<p>La période de l'évènement n'est pas configurée. Aucun calendrier à afficher.</p>";
+    return;
+  }
+
+  if (!Array.isArray(dailyAvailability) || dailyAvailability.length === 0) {
+    pickerElement.innerHTML = "<p>Aucune date à afficher pour le moment.</p>";
+    return;
+  }
+
+  if (!window.FullCalendar || !window.FullCalendar.Calendar) {
+    pickerElement.innerHTML = "<p>Calendrier indisponible pour le moment.</p>";
+    return;
+  }
+
+  pickerElement.innerHTML = "";
+  const calendarRoot = document.createElement("div");
+  calendarRoot.id = "results-calendar";
+  pickerElement.appendChild(calendarRoot);
+
+  if (resultsCalendar) {
+    resultsCalendar.destroy();
+    resultsCalendar = null;
+  }
+
+  resultsCalendar = new window.FullCalendar.Calendar(calendarRoot, {
+    initialView: "dayGridMonth",
+    initialDate: eventStartDate,
+    locale: "fr",
+    firstDay: 1,
+    fixedWeekCount: true,
+    height: 640,
+    expandRows: true,
+    validRange: {
+      start: eventStartDate,
+      end: addOneDayIso(eventEndDate),
+    },
+    headerToolbar: {
+      left: "prev,next today",
+      center: "title",
+      right: "",
+    },
+    datesSet: () => {
+      requestAnimationFrame(() => {
+        updateResultsCalendarDayClasses();
+      });
+    },
+    dayCellClassNames: (arg) => {
+      const isoDate = formatDateLocalIso(arg.date);
+      return [getResultsCalendarDayClass(isoDate)];
+    },
+  });
+
+  resultsCalendar.render();
+  requestAnimationFrame(() => {
+    updateResultsCalendarDayClasses();
+  });
+}
 /**
  * Rend le tableau détaillé de disponibilité par date.
  *
@@ -192,6 +572,7 @@ function renderParticipantsSummary(participants) {
     return;
   }
 
+  resultsParticipantsById = new Map();
   listElement.innerHTML = "";
   if (!Array.isArray(participants) || participants.length === 0) {
     listElement.innerHTML = "<li>Aucun participant pour le moment.</li>";
@@ -199,16 +580,41 @@ function renderParticipantsSummary(participants) {
   }
 
   for (const participant of participants) {
-    const li = document.createElement("li");
+    const participantId = String(participant?.id || "");
     const name = String(participant?.name || "Participant");
-    const unavailableDates = Array.isArray(participant?.unavailableDates)
-      ? participant.unavailableDates
-      : [];
-    const availableDates = Array.isArray(participant?.availableDates)
-      ? participant.availableDates
-      : [];
-    li.textContent = `${name} - ${availableDates.length} dispo / ${unavailableDates.length} indispo`;
+    if (!participantId) {
+      continue;
+    }
+
+    resultsParticipantsById.set(participantId, participant);
+
+    const li = document.createElement("li");
+    li.className = "participant-summary-item";
+
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "participant-summary-name";
+    nameSpan.textContent = name;
+    li.appendChild(nameSpan);
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "show-participant-calendar-button";
+    button.dataset.participantId = participantId;
+    button.setAttribute("aria-pressed", "false");
+    button.textContent = "Voir le calendrier";
+    li.appendChild(button);
+
     listElement.appendChild(li);
+  }
+
+  if (
+    resultsCalendarMode === "participant" &&
+    resultsSelectedParticipant &&
+    resultsParticipantsById.has(String(resultsSelectedParticipant.id || ""))
+  ) {
+    resultsSelectedParticipant = resultsParticipantsById.get(String(resultsSelectedParticipant.id));
+    updateParticipantButtonStates(String(resultsSelectedParticipant?.id || ""));
+    updateResultsCalendarDayClasses();
   }
 }
 
@@ -218,34 +624,77 @@ function renderParticipantsSummary(participants) {
 async function loadResults() {
   const syncerId = getQueryParam("syncerId");
   if (!syncerId) {
-    setResultsFeedback("Paramètre syncerId manquant dans l'URL.", true);
     return;
   }
-
-  setResultsFeedback("Chargement des résultats...", false);
 
   try {
     const response = await fetchSyncerResults(syncerId);
     const results = response?.results || {};
 
     renderSyncerHeader(results.syncer || {}, Number(results.participantsCount || 0));
-    renderBestDates(Array.isArray(results.bestDates) ? results.bestDates : []);
+    renderBestDatesCalendar(
+      results.syncer || {},
+      Array.isArray(results.dailyAvailability) ? results.dailyAvailability : [],
+      Array.isArray(results.bestDates) ? results.bestDates : []
+    );
     renderDailyAvailabilityTable(
       Array.isArray(results.dailyAvailability) ? results.dailyAvailability : []
     );
     renderParticipantsSummary(Array.isArray(results.participants) ? results.participants : []);
-
-    setResultsFeedback("Résultats chargés.", false);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Erreur inconnue.";
-    setResultsFeedback(message, true);
+  } catch (_error) {
+    // Erreur silencieuse : les blocs restent dans leur état initial.
   }
 }
 
-const refreshButton = document.getElementById("refresh-results-button");
-if (refreshButton) {
-  refreshButton.addEventListener("click", () => {
-    loadResults();
+/**
+ * Branche un bouton plier/déplier sur un conteneur.
+ *
+ * @param {string} buttonId Identifiant du bouton.
+ * @param {string} contentId Identifiant du conteneur.
+ */
+function bindCollapsibleSection(buttonId, contentId) {
+  const toggleButton = document.getElementById(buttonId);
+  const contentElement = document.getElementById(contentId);
+  if (!toggleButton || !contentElement) {
+    return;
+  }
+
+  toggleButton.addEventListener("click", () => {
+    const isExpanded = !contentElement.hidden;
+    contentElement.hidden = isExpanded;
+    toggleButton.setAttribute("aria-expanded", String(!isExpanded));
+    toggleButton.textContent = isExpanded ? "Afficher le détail" : "Masquer le détail";
+  });
+}
+
+bindCollapsibleSection("toggle-participants-button", "participants-section-content");
+bindCollapsibleSection("toggle-daily-detail-button", "daily-detail-content");
+
+const resetCalendarViewButton = document.getElementById("reset-calendar-view-button");
+if (resetCalendarViewButton) {
+  resetCalendarViewButton.addEventListener("click", () => {
+    resetResultsCalendarView();
+  });
+}
+
+const participantsSummaryList = document.getElementById("participants-summary-list");
+if (participantsSummaryList) {
+  participantsSummaryList.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) {
+      return;
+    }
+    if (!target.classList.contains("show-participant-calendar-button")) {
+      return;
+    }
+
+    const participantId = String(target.dataset.participantId || "");
+    const participant = resultsParticipantsById.get(participantId);
+    if (!participant) {
+      return;
+    }
+
+    showParticipantOnCalendar(participant);
   });
 }
 

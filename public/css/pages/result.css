@@ -1,14 +1,254 @@
-.page-result #best-dates-list {
+.page-result .result-section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.page-result .result-section-header h2 {
+  margin: 0;
+}
+
+.page-result .result-toggle-detail-button {
+  background: #58627a;
+}
+
+.page-result .result-toggle-detail-button:hover {
+  background: #3f475c;
+}
+
+.page-result #daily-detail-content,
+.page-result #participants-section-content {
+  margin-top: 4px;
+}
+
+.page-result .results-calendar-intro {
+  margin-bottom: 12px;
+  color: var(--muted);
+}
+
+.page-result .results-calendar-actions {
+  margin: 0 0 12px;
+}
+
+.page-result #reset-calendar-view-button {
+  background: #58627a;
+}
+
+.page-result #reset-calendar-view-button:hover {
+  background: #3f475c;
+}
+
+.page-result #best-dates-calendar-picker {
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.page-result #results-calendar {
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 10px 18px;
+  padding: 8px;
 }
 
-.page-result #refresh-results-button {
-  background: #2f6fbe;
+.page-result .fc .fc-toolbar.fc-header-toolbar {
+  margin-bottom: 0.6rem;
 }
 
-.page-result #refresh-results-button:hover {
-  background: #245894;
+.page-result .fc .fc-toolbar-title {
+  font-size: 1.1rem;
 }
+
+.page-result .fc .fc-button {
+  background: var(--primary);
+  border-color: var(--primary);
+  font-size: 0.86rem;
+}
+
+.page-result .fc .fc-button:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.page-result .fc .fc-button-primary:not(:disabled).fc-button-active,
+.page-result .fc .fc-button-primary:not(:disabled):active {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.page-result .fc .fc-daygrid-day.fc-day-score-best .fc-daygrid-day-frame {
+  background: #4db87a;
+}
+
+.page-result .fc .fc-daygrid-day.fc-day-score-high .fc-daygrid-day-frame {
+  background: #9dd4b0;
+}
+
+.page-result .fc .fc-daygrid-day.fc-day-score-medium .fc-daygrid-day-frame {
+  background: #d4e88a;
+}
+
+.page-result .fc .fc-daygrid-day.fc-day-score-low .fc-daygrid-day-frame {
+  background: #f0e68c;
+}
+
+.page-result .fc .fc-daygrid-day.fc-day-score-none .fc-daygrid-day-frame {
+  background: #e4e9f2;
+}
+
+.page-result .fc .fc-daygrid-day.fc-day-available .fc-daygrid-day-frame {
+  background: #9dd4b0;
+}
+
+.page-result .fc .fc-daygrid-day.fc-day-unavailable .fc-daygrid-day-frame {
+  background: #e89494;
+}
+
+.page-result .fc .fc-daygrid-day.fc-day-unspecified .fc-daygrid-day-frame {
+  background: #e4e9f2;
+}
+
+.page-result .fc .fc-daygrid-day.fc-day-out-of-range .fc-daygrid-day-frame {
+  background: #f2f4f8;
+  opacity: 0.7;
+}
+
+.page-result .fc .fc-daygrid-day-number {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.page-result .results-calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.page-result .results-calendar-legend[hidden],
+.page-result #results-calendar-intro[hidden] {
+  display: none !important;
+}
+
+.page-result .results-calendar-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.page-result .legend-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(28, 36, 52, 0.12);
+  flex-shrink: 0;
+}
+
+.page-result .legend-best {
+  background: #4db87a;
+}
+
+.page-result .legend-high {
+  background: #9dd4b0;
+}
+
+.page-result .legend-medium {
+  background: #d4e88a;
+}
+
+.page-result .legend-low {
+  background: #f0e68c;
+}
+
+.page-result .legend-none {
+  background: #e4e9f2;
+}
+
+.page-result .legend-participant-available {
+  background: #9dd4b0;
+}
+
+.page-result .legend-participant-unavailable {
+  background: #e89494;
+}
+
+.page-result .legend-participant-unspecified {
+  background: #e4e9f2;
+}
+
+.page-result #participants-summary-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.page-result #participants-summary-list li {
+  margin: 0;
+}
+
+.page-result .participant-summary-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.page-result .participant-summary-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.page-result .show-participant-calendar-button {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 0.92rem;
+  background: var(--primary);
+}
+
+.page-result .show-participant-calendar-button:hover {
+  background: var(--primary-dark);
+}
+
+.page-result .show-participant-calendar-button.is-active {
+  background: #1f8f5f;
+}
+
+@media (max-width: 780px) {
+  .page-result #results-calendar {
+    padding: 6px;
+  }
+
+  .page-result .fc .fc-toolbar {
+    display: grid;
+    gap: 8px;
+  }
+
+  .page-result .fc .fc-toolbar-chunk {
+    display: flex;
+    justify-content: center;
+  }
+
+  .page-result .fc {
+    height: 560px !important;
+  }
+}
+

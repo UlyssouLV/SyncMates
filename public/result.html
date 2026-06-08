@@ -6,6 +6,10 @@
     <title>SyncMates - Résultats</title>
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="css/pages/result.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css"
+    />
   </head>
   <body class="page-result">
     <main>
@@ -25,52 +29,98 @@
         </p>
       </section>
 
-      <section>
-        <h2>Top dates recommandées</h2>
-        <ol id="best-dates-list">
-          <li>Aucun calcul disponible pour le moment.</li>
-        </ol>
-      </section>
-
-      <section>
-        <h2>Détail par date</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Participants disponibles</th>
-              <th>Participants indisponibles</th>
-              <th>Non renseigné</th>
-              <th>Taux de disponibilité</th>
-            </tr>
-          </thead>
-          <tbody id="availability-table-body">
-            <tr>
-              <td colspan="5">Aucune donnée de disponibilité à afficher.</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section>
-        <h2>Participants</h2>
-        <ul id="participants-summary-list">
-          <li>Aucun participant pour le moment.</li>
+      <section id="results-calendar-section">
+        <h2 id="results-calendar-title">Top dates recommandées</h2>
+        <p id="results-calendar-intro" class="results-calendar-intro">
+          Les jours les plus favorables sont en vert foncé. Les autres jours de la plage
+          passent du vert au jaune selon le niveau de disponibilité.
+        </p>
+        <p class="results-calendar-actions">
+          <button type="button" id="reset-calendar-view-button" hidden>Revenir à la vue globale</button>
+        </p>
+        <div id="best-dates-calendar-picker">
+          <p>Chargement du calendrier...</p>
+        </div>
+        <ul
+          id="results-calendar-legend-aggregate"
+          class="results-calendar-legend"
+          aria-label="Légende du calendrier global"
+        >
+          <li><span class="legend-swatch legend-best"></span> Meilleures dates</li>
+          <li><span class="legend-swatch legend-high"></span> Bonne disponibilité</li>
+          <li><span class="legend-swatch legend-medium"></span> Disponibilité moyenne</li>
+          <li><span class="legend-swatch legend-low"></span> Faible disponibilité</li>
+          <li><span class="legend-swatch legend-none"></span> Aucun disponible</li>
+        </ul>
+        <ul
+          id="results-calendar-legend-participant"
+          class="results-calendar-legend"
+          aria-label="Légende du calendrier participant"
+          hidden
+        >
+          <li><span class="legend-swatch legend-participant-available"></span> Disponible</li>
+          <li><span class="legend-swatch legend-participant-unavailable"></span> Indisponible</li>
+          <li><span class="legend-swatch legend-participant-unspecified"></span> Non renseigné</li>
         </ul>
       </section>
 
-      <section>
-        <h2>Actions</h2>
-        <button type="button" id="refresh-results-button">
-          Rafraîchir les résultats
-        </button>
+      <section id="participants-section">
+        <div class="result-section-header">
+          <h2>Participants</h2>
+          <button
+            type="button"
+            id="toggle-participants-button"
+            class="result-toggle-detail-button"
+            aria-expanded="false"
+            aria-controls="participants-section-content"
+          >
+            Afficher le détail
+          </button>
+        </div>
+        <div id="participants-section-content" hidden>
+          <ul id="participants-summary-list">
+            <li>Aucun participant pour le moment.</li>
+          </ul>
+        </div>
       </section>
 
-      <p id="results-feedback" aria-live="polite"></p>
+      <section id="daily-detail-section">
+        <div class="result-section-header">
+          <h2>Détail par date</h2>
+          <button
+            type="button"
+            id="toggle-daily-detail-button"
+            class="result-toggle-detail-button"
+            aria-expanded="false"
+            aria-controls="daily-detail-content"
+          >
+            Afficher le détail
+          </button>
+        </div>
+        <div id="daily-detail-content" hidden>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Participants disponibles</th>
+                <th>Participants indisponibles</th>
+                <th>Non renseigné</th>
+                <th>Taux de disponibilité</th>
+              </tr>
+            </thead>
+            <tbody id="availability-table-body">
+              <tr>
+                <td colspan="5">Aucune donnée de disponibilité à afficher.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <p><a href="host.html">Organiser votre propre synchroniseur</a></p>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js" defer></script>
     <script src="js/maintenance.js" defer></script>
     <script src="js/result.js" defer></script>
   </body>
