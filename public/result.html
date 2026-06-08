@@ -120,6 +120,31 @@
       <p><a href="host.html">Organiser votre propre synchroniseur</a></p>
     </main>
 
+    <div id="day-availability-modal" class="results-day-modal" hidden>
+      <div class="results-day-modal-backdrop" data-modal-close></div>
+      <div
+        class="results-day-modal-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="day-availability-modal-title"
+      >
+        <button type="button" class="results-day-modal-close" aria-label="Fermer" data-modal-close>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path
+              d="M4.25 4.25l7.5 7.5M11.75 4.25l-7.5 7.5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+        <h3 id="day-availability-modal-title">Participants disponibles</h3>
+        <p id="day-availability-modal-summary"></p>
+        <ul id="day-availability-modal-list"></ul>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js" defer></script>
     <script src="js/maintenance.js" defer></script>
     <script src="js/result.js" defer></script>

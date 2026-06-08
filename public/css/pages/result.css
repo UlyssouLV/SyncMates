@@ -252,3 +252,108 @@
   }
 }
 
+.page-result .results-day-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.page-result .results-day-modal[hidden] {
+  display: none !important;
+}
+
+.page-result .results-day-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(19, 34, 78, 0.45);
+}
+
+.page-result .results-day-modal-dialog {
+  position: relative;
+  width: min(480px, 100%);
+  max-height: min(80vh, 560px);
+  overflow: auto;
+  margin: 0;
+  padding: 22px 22px 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.page-result .results-day-modal-dialog h3 {
+  margin: 0 28px 8px 0;
+  font-size: 1.15rem;
+}
+
+.page-result #day-availability-modal-summary {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.page-result .results-day-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.page-result .results-day-modal-close:hover {
+  background: var(--surface-soft);
+  border-color: #b8c3d9;
+  color: var(--text);
+}
+
+.page-result .results-day-modal-close:focus-visible {
+  outline: 2px solid rgba(47, 92, 255, 0.25);
+  outline-offset: 2px;
+}
+
+.page-result #day-availability-modal-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.page-result #day-availability-modal-list li {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #f3fbf6;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.page-result #day-availability-modal-list .day-availability-empty {
+  background: #fff;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.page-result .results-calendar--aggregate .fc-daygrid-day:not(.fc-day-out-of-range) {
+  cursor: pointer;
+}
+
+.page-result .results-calendar--participant .fc-daygrid-day {
+  cursor: default;
+}
+

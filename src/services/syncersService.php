@@ -526,6 +526,7 @@ function getSyncerResults(string $syncerId): array
         $availableCount = 0;
         $unavailableCount = 0;
         $unspecifiedCount = 0;
+        $availableParticipants = [];
         $unavailableParticipants = [];
         $unspecifiedParticipants = [];
 
@@ -541,12 +542,17 @@ function getSyncerResults(string $syncerId): array
 
             if ($dateState === 'available') {
                 $availableCount++;
+                $availableParticipants[] = $name;
                 continue;
             }
 
             $unspecifiedCount++;
             $unspecifiedParticipants[] = $name;
         }
+
+        sort($availableParticipants);
+        sort($unavailableParticipants);
+        sort($unspecifiedParticipants);
 
         $availabilityRate = $totalParticipants > 0
             ? round(($availableCount / $totalParticipants) * 100, 2)
@@ -558,6 +564,7 @@ function getSyncerResults(string $syncerId): array
             'unavailableCount' => $unavailableCount,
             'unspecifiedCount' => $unspecifiedCount,
             'availabilityRate' => $availabilityRate,
+            'availableParticipants' => $availableParticipants,
             'unavailableParticipants' => $unavailableParticipants,
             'unspecifiedParticipants' => $unspecifiedParticipants,
         ];

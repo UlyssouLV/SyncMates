@@ -315,6 +315,96 @@ function updateResultsCalendarChrome() {
   if (participantLegend) {
     participantLegend.hidden = !isParticipantMode;
   }
+
+  const calendarRoot = document.getElementById("results-calendar");
+  if (calendarRoot) {
+    calendarRoot.classList.toggle("results-calendar--aggregate", !isParticipantMode);
+    calendarRoot.classList.toggle("results-calendar--participant", isParticipantMode);
+  }
+}
+
+/**
+ * Formate une date ISO en texte lisible.
+ *
+ * @param {string} isoDate Date ISO (YYYY-MM-DD).
+ * @returns {string} Date formatée en français.
+ */
+function formatHumanDate(isoDate) {
+  const value = String(isoDate || "").trim();
+  if (!value) {
+    return "-";
+  }
+
+  const parsed = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return parsed.toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+/**
+ * Ouvre la modale listant les participants disponibles pour une date.
+ *
+ * @param {string} isoDate Date ISO (YYYY-MM-DD).
+ */
+function openDayAvailabilityModal(isoDate) {
+  const modalElement = document.getElementById("day-availability-modal");
+  const titleElement = document.getElementById("day-availability-modal-title");
+  const summaryElement = document.getElementById("day-availability-modal-summary");
+  const listElement = document.getElementById("day-availability-modal-list");
+  if (!modalElement || !titleElement || !summaryElement || !listElement) {
+    return;
+  }
+
+  const row = resultsDailyAvailabilityByDate.get(isoDate);
+  const availableParticipants = Array.isArray(row?.availableParticipants)
+    ? row.availableParticipants
+    : [];
+  const availableCount = Number(row?.availableCount || availableParticipants.length);
+
+  titleElement.textContent = `Participants disponibles`;
+  summaryElement.textContent = `${formatHumanDate(isoDate)} — ${availableCount} participant(s) disponible(s)`;
+
+  listElement.innerHTML = "";
+  if (availableParticipants.length === 0) {
+    const li = document.createElement("li");
+    li.className = "day-availability-empty";
+    li.textContent = "Aucun participant disponible ce jour-là.";
+    listElement.appendChild(li);
+  } else {
+    for (const name of availableParticipants) {
+      const li = document.createElement("li");
+      li.textContent = String(name);
+      listElement.appendChild(li);
+    }
+  }
+
+  modalElement.hidden = false;
+  document.body.style.overflow = "hidden";
+
+  const closeButton = modalElement.querySelector(".results-day-modal-close");
+  if (closeButton instanceof HTMLButtonElement) {
+    closeButton.focus();
+  }
+}
+
+/**
+ * Ferme la modale des participants disponibles.
+ */
+function closeDayAvailabilityModal() {
+  const modalElement = document.getElementById("day-availability-modal");
+  if (!modalElement || modalElement.hidden) {
+    return;
+  }
+
+  modalElement.hidden = true;
+  document.body.style.overflow = "";
 }
 
 /**
@@ -504,9 +594,22 @@ function renderBestDatesCalendar(syncer, dailyAvailability, bestDates) {
       const isoDate = formatDateLocalIso(arg.date);
       return [getResultsCalendarDayClass(isoDate)];
     },
+    dateClick: (info) => {
+      if (resultsCalendarMode !== "aggregate") {
+        return;
+      }
+
+      const isoDate = info.dateStr;
+      if (!isDateWithinRange(isoDate, resultsEventStartDate, resultsEventEndDate)) {
+        return;
+      }
+
+      openDayAvailabilityModal(isoDate);
+    },
   });
 
   resultsCalendar.render();
+  calendarRoot.classList.add("results-calendar--aggregate");
   requestAnimationFrame(() => {
     updateResultsCalendarDayClasses();
   });
@@ -669,6 +772,25 @@ function bindCollapsibleSection(buttonId, contentId) {
 
 bindCollapsibleSection("toggle-participants-button", "participants-section-content");
 bindCollapsibleSection("toggle-daily-detail-button", "daily-detail-content");
+
+const dayAvailabilityModal = document.getElementById("day-availability-modal");
+if (dayAvailabilityModal) {
+  dayAvailabilityModal.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    if (target.hasAttribute("data-modal-close")) {
+      closeDayAvailabilityModal();
+    }
+  });
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeDayAvailabilityModal();
+  }
+});
 
 const resetCalendarViewButton = document.getElementById("reset-calendar-view-button");
 if (resetCalendarViewButton) {
