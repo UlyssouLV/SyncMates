@@ -1,0 +1,141 @@
+{
+    "id": "sync_03e379851e9f7ac3",
+    "name": "Pool Party Désinté Ulysse",
+    "passwordHash": "$2y$12$2SOUyo8x3AspZSYtsAdL1OTteJ3okfMzX1bhWVdmZ0OnGM6rWzOLa",
+    "host": {
+        "name": "Host"
+    },
+    "participants": [
+        {
+            "id": "p_5e25e6ec1cbc",
+            "name": "Camzer",
+            "unavailableDates": [],
+            "availableDates": [
+                "2026-06-18",
+                "2026-06-19",
+                "2026-06-23",
+                "2026-06-24",
+                "2026-06-25",
+                "2026-06-26",
+                "2026-06-29",
+                "2026-06-30"
+            ],
+            "availabilityModel": "three-state"
+        },
+        {
+            "id": "p_a024a32d0255",
+            "name": "Camille Coudrain",
+            "unavailableDates": [],
+            "availableDates": [],
+            "availabilityModel": "three-state"
+        },
+        {
+            "id": "p_2fafe1294827",
+            "name": "Bero",
+            "unavailableDates": [],
+            "availableDates": [],
+            "availabilityModel": "three-state"
+        },
+        {
+            "id": "p_b3c97e77468a",
+            "name": "Maes",
+            "unavailableDates": [],
+            "availableDates": [],
+            "availabilityModel": "three-state"
+        },
+        {
+            "id": "p_ce0ae623a9ff",
+            "name": "Kyky2Bondy",
+            "unavailableDates": [],
+            "availableDates": [],
+            "availabilityModel": "three-state"
+        },
+        {
+            "id": "p_fe15f08e0e02",
+            "name": "Apolline de Malherbes",
+            "unavailableDates": [],
+            "availableDates": [],
+            "availabilityModel": "three-state"
+        },
+        {
+            "id": "p_f6113bebc44f",
+            "name": "Manon Mango Loco",
+            "unavailableDates": [
+                "2026-06-18",
+                "2026-06-19",
+                "2026-06-25"
+            ],
+            "availableDates": [],
+            "availabilityModel": "unavailabilities-only"
+        },
+        {
+            "id": "p_12a436354e89",
+            "name": "Jeremy Ferari",
+            "unavailableDates": [],
+            "availableDates": [],
+            "availabilityModel": "three-state"
+        },
+        {
+            "id": "p_260543ff95d3",
+            "name": "Yassine",
+            "unavailableDates": [],
+            "availableDates": [],
+            "availabilityModel": "three-state"
+        },
+        {
+            "id": "p_2048c86b5e11",
+            "name": "Victor Stagiaire",
+            "unavailableDates": [],
+            "availableDates": [],
+            "availabilityModel": "three-state"
+        },
+        {
+            "id": "p_09e941f60e16",
+            "name": "Teze",
+            "unavailableDates": [],
+            "availableDates": [],
+            "availabilityModel": "three-state"
+        },
+        {
+            "id": "p_83e0963e5897",
+            "name": "Sam (Doudou)",
+            "unavailableDates": [],
+            "availableDates": [],
+            "availabilityModel": "three-state"
+        },
+        {
+            "id": "p_d92065ee2a22",
+            "name": "Pierrot",
+            "unavailableDates": [],
+            "availableDates": [],
+            "availabilityModel": "three-state"
+        },
+        {
+            "id": "p_b859f1b84f59",
+            "name": "Emilie du BourgPalette",
+            "unavailableDates": [],
+            "availableDates": [],
+            "availabilityModel": "three-state"
+        },
+        {
+            "id": "p_76fd827ae7d3",
+            "name": "AdShow",
+            "unavailableDates": [],
+            "availableDates": [],
+            "availabilityModel": "three-state"
+        }
+    ],
+    "eventStartDate": "2026-06-18",
+    "eventEndDate": "2026-07-05",
+    "exceptionDates": [
+        "2026-06-20",
+        "2026-06-21",
+        "2026-06-22",
+        "2026-06-27",
+        "2026-06-28",
+        "2026-07-04"
+    ],
+    "createdAt": "2026-06-08T13:32:35+00:00",
+    "expiresAt": "2026-06-10T13:32:35+00:00",
+    "shareToken": "dec57e663f3dd86937e32a837a4d2d5ad01106df84bec608"
+}

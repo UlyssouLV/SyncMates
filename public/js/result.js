@@ -259,14 +259,40 @@ function getParticipantDateClass(participant, isoDate) {
   if (unavailableDates.includes(isoDate)) {
     return "fc-day-unavailable";
   }
+
+  if (participantUsesUnavailabilitiesOnlyAvailability(participant)) {
+    return "fc-day-available";
+  }
+
   if (availableDates.includes(isoDate)) {
     return "fc-day-available";
   }
-  if (participant?.availabilityModel === "three-state") {
+
+  if (String(participant?.availabilityModel || "three-state") === "three-state") {
     return "fc-day-unspecified";
   }
 
   return "fc-day-available";
+}
+
+/**
+ * Indique si seules des indisponibilités ont été renseignées.
+ *
+ * @param {Object} participant Données participant.
+ * @returns {boolean} true si les autres jours sont implicitement disponibles.
+ */
+function participantUsesUnavailabilitiesOnlyAvailability(participant) {
+  const availabilityModel = String(participant?.availabilityModel || "three-state");
+  if (availabilityModel === "unavailabilities-only") {
+    return true;
+  }
+
+  const unavailableDates = Array.isArray(participant?.unavailableDates)
+    ? participant.unavailableDates
+    : [];
+  const availableDates = Array.isArray(participant?.availableDates) ? participant.availableDates : [];
+
+  return availableDates.length === 0 && unavailableDates.length > 0;
 }
 
 /**

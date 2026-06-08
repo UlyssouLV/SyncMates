@@ -375,13 +375,17 @@ function handleUpdateParticipantUnavailabilities(string $syncerId, string $parti
     $availableDates = isset($payload['availableDates']) && is_array($payload['availableDates'])
         ? $payload['availableDates']
         : [];
+    $availabilityModel = isset($payload['availabilityModel'])
+        ? (string) $payload['availabilityModel']
+        : '';
 
     try {
         $participant = updateParticipantUnavailabilities(
             $syncerId,
             $participantId,
             $unavailableDates,
-            $availableDates
+            $availableDates,
+            $availabilityModel
         );
         jsonResponse(200, [
             'message' => 'Indisponibilités enregistrées.',

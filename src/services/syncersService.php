@@ -285,6 +285,7 @@ function getParticipantUnavailabilities(string $syncerId, string $participantId)
  * @param string $participantId    Identifiant du participant.
  * @param array  $unavailableDates Liste des dates indisponibles (YYYY-MM-DD).
  * @param array  $availableDates   Liste des dates disponibles (YYYY-MM-DD).
+ * @param string $availabilityModel Modèle explicite (three-state|unavailabilities-only).
  *
  * @return array Données participant mises à jour.
  *
@@ -295,7 +296,8 @@ function updateParticipantUnavailabilities(
     string $syncerId,
     string $participantId,
     array $unavailableDates,
-    array $availableDates = []
+    array $availableDates = [],
+    string $availabilityModel = ''
 ): array
 {
     $trimmedSyncerId = trim($syncerId);
@@ -351,9 +353,17 @@ function updateParticipantUnavailabilities(
             continue;
         }
 
+        $resolvedAvailabilityModel = resolveParticipantAvailabilityModelForSave(
+            $normalizedUnavailableDates,
+            $normalizedAvailableDates,
+            $availabilityModel
+        );
+
         $participant['unavailableDates'] = $normalizedUnavailableDates;
-        $participant['availableDates'] = $normalizedAvailableDates;
-        $participant['availabilityModel'] = 'three-state';
+        $participant['availableDates'] = $resolvedAvailabilityModel === 'unavailabilities-only'
+            ? []
+            : $normalizedAvailableDates;
+        $participant['availabilityModel'] = $resolvedAvailabilityModel;
         $updatedParticipant = buildParticipantAvailabilityPayload($participant);
         break;
     }
@@ -744,8 +754,89 @@ function filterDatesExcludingExceptions(array $dates, array $exceptionDates): ar
 
 function participantUsesThreeStateAvailability(array $participant): bool
 {
-    return isset($participant['availabilityModel'])
-        && (string) $participant['availabilityModel'] === 'three-state';
+    return resolveParticipantAvailabilityModel($participant) === 'three-state';
+}
+
+/**
+ * Indique si le participant n'a renseigné que des indisponibilités.
+ *
+ * Dans ce modèle, toutes les autres dates de la plage sont disponibles.
+ *
+ * @param array $participant Données participant.
+ */
+function participantUsesUnavailabilitiesOnlyAvailability(array $participant): bool
+{
+    return resolveParticipantAvailabilityModel($participant) === 'unavailabilities-only';
+}
+
+/**
+ * Détermine le modèle de disponibilité effectif d'un participant.
+ *
+ * @param array $participant Données participant.
+ *
+ * @return string three-state|unavailabilities-only|legacy
+ */
+function resolveParticipantAvailabilityModel(array $participant): string
+{
+    $storedModel = isset($participant['availabilityModel'])
+        ? trim((string) $participant['availabilityModel'])
+        : '';
+
+    if ($storedModel === 'legacy') {
+        return 'legacy';
+    }
+
+    if ($storedModel === 'unavailabilities-only') {
+        return 'unavailabilities-only';
+    }
+
+    $unavailableDates = isset($participant['unavailableDates']) && is_array($participant['unavailableDates'])
+        ? $participant['unavailableDates']
+        : [];
+    $availableDates = isset($participant['availableDates']) && is_array($participant['availableDates'])
+        ? $participant['availableDates']
+        : [];
+
+    if (count($availableDates) === 0 && count($unavailableDates) > 0) {
+        return 'unavailabilities-only';
+    }
+
+    return 'three-state';
+}
+
+/**
+ * Détermine le modèle à enregistrer selon les listes envoyées par le client.
+ *
+ * @param array  $unavailableDates Dates indisponibles normalisées.
+ * @param array  $availableDates   Dates disponibles normalisées.
+ * @param string $requestedModel   Modèle demandé par le client.
+ *
+ * @return string three-state|unavailabilities-only
+ */
+function resolveParticipantAvailabilityModelForSave(
+    array $unavailableDates,
+    array $availableDates,
+    string $requestedModel = ''
+): string
+{
+    $trimmedModel = trim($requestedModel);
+    if ($trimmedModel === 'three-state') {
+        return 'three-state';
+    }
+
+    if ($trimmedModel === 'unavailabilities-only') {
+        return 'unavailabilities-only';
+    }
+
+    if (count($availableDates) > 0) {
+        return 'three-state';
+    }
+
+    if (count($unavailableDates) > 0) {
+        return 'unavailabilities-only';
+    }
+
+    return 'three-state';
 }
 
 /**
@@ -795,7 +886,7 @@ function buildParticipantAvailabilityPayload(array $participant): array
         'availableDates' => isset($participant['availableDates']) && is_array($participant['availableDates'])
             ? array_values($participant['availableDates'])
             : [],
-        'availabilityModel' => participantUsesThreeStateAvailability($participant) ? 'three-state' : 'legacy',
+        'availabilityModel' => resolveParticipantAvailabilityModel($participant),
     ];
 }
 
@@ -819,6 +910,10 @@ function resolveParticipantDateState(array $participant, string $currentDate): s
     $availableDates = isset($participant['availableDates']) && is_array($participant['availableDates'])
         ? $participant['availableDates']
         : [];
+    if (participantUsesUnavailabilitiesOnlyAvailability($participant)) {
+        return 'available';
+    }
+
     if (in_array($currentDate, $availableDates, true)) {
         return 'available';
     }

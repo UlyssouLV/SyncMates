@@ -97,6 +97,7 @@ let hostExceptionDatesSet = new Set();
 let currentEventStartDate = "";
 let currentEventEndDate = "";
 let participantCalendar = null;
+let participantAvailabilityModel = "three-state";
 
 /**
  * Indique si le host a exclu cette date de l'évènement.
@@ -120,6 +121,14 @@ function getDateAvailabilityState(isoDate) {
   }
 
   if (availableDatesSet.has(isoDate)) {
+    return "available";
+  }
+
+  if (
+    participantAvailabilityModel === "unavailabilities-only" &&
+    isDateWithinRange(isoDate, currentEventStartDate, currentEventEndDate) &&
+    !isHostExceptionDate(isoDate)
+  ) {
     return "available";
   }
 
@@ -168,7 +177,13 @@ function cycleDateAvailabilityState(isoDate) {
 
   if (state === "unavailable") {
     unavailableDatesSet.delete(isoDate);
+    participantAvailabilityModel = "three-state";
     availableDatesSet.add(isoDate);
+    return;
+  }
+
+  if (participantAvailabilityModel === "unavailabilities-only") {
+    participantAvailabilityModel = "three-state";
     return;
   }
 
@@ -459,7 +474,7 @@ function renderUnavailabilityPicker(eventStartDate, eventEndDate) {
  *
  * @param {Array<string>} unavailableDates Dates indisponibles.
  * @param {Array<string>} availableDates Dates disponibles.
- * @param {boolean} usesThreeState Indique si le modèle à trois états est actif.
+ * @param {string} availabilityModel Modèle de disponibilité (three-state|unavailabilities-only).
  */
 function applyHostExceptionDates(exceptionDates) {
   hostExceptionDatesSet = new Set();
@@ -475,9 +490,11 @@ function applyHostExceptionDates(exceptionDates) {
   }
 }
 
-function applyAvailabilitySelection(unavailableDates, availableDates, usesThreeState) {
+function applyAvailabilitySelection(unavailableDates, availableDates, availabilityModel) {
   const nextUnavailableSet = new Set();
   const nextAvailableSet = new Set();
+  const resolvedModel =
+    availabilityModel === "unavailabilities-only" ? "unavailabilities-only" : "three-state";
 
   if (Array.isArray(unavailableDates)) {
     for (const date of unavailableDates) {
@@ -491,7 +508,7 @@ function applyAvailabilitySelection(unavailableDates, availableDates, usesThreeS
     }
   }
 
-  if (usesThreeState && Array.isArray(availableDates)) {
+  if (resolvedModel === "three-state" && Array.isArray(availableDates)) {
     for (const date of availableDates) {
       const isoDate = String(date || "");
       if (
@@ -501,16 +518,11 @@ function applyAvailabilitySelection(unavailableDates, availableDates, usesThreeS
         nextAvailableSet.add(isoDate);
       }
     }
-  } else if (nextUnavailableSet.size > 0) {
-    for (const isoDate of buildDateRange(currentEventStartDate, currentEventEndDate)) {
-      if (!nextUnavailableSet.has(isoDate) && !isHostExceptionDate(isoDate)) {
-        nextAvailableSet.add(isoDate);
-      }
-    }
   }
 
   unavailableDatesSet = nextUnavailableSet;
   availableDatesSet = nextAvailableSet;
+  participantAvailabilityModel = resolvedModel;
   updateCalendarDayClasses();
 }
 
@@ -520,7 +532,25 @@ function applyAvailabilitySelection(unavailableDates, availableDates, usesThreeS
 function clearAvailabilitySelection() {
   unavailableDatesSet = new Set();
   availableDatesSet = new Set();
+  participantAvailabilityModel = "three-state";
   updateCalendarDayClasses();
+}
+
+/**
+ * Détermine le modèle à enregistrer selon la sélection courante.
+ *
+ * @returns {"three-state"|"unavailabilities-only"} Modèle de disponibilité.
+ */
+function resolveParticipantAvailabilityModelForSave() {
+  if (availableDatesSet.size > 0) {
+    return "three-state";
+  }
+
+  if (unavailableDatesSet.size > 0) {
+    return "unavailabilities-only";
+  }
+
+  return "three-state";
 }
 
 /**
@@ -594,7 +624,8 @@ async function saveParticipantUnavailabilities(
   currentSyncerId,
   participantId,
   unavailableDates,
-  availableDates
+  availableDates,
+  availabilityModel
 ) {
   const response = await fetch(
     `/api/syncers/${encodeURIComponent(currentSyncerId)}/participants/${encodeURIComponent(
@@ -608,6 +639,7 @@ async function saveParticipantUnavailabilities(
       body: JSON.stringify({
         unavailableDates,
         availableDates,
+        availabilityModel,
       }),
     }
   );
@@ -715,8 +747,8 @@ if (participantSelectionForm && participantIdInput instanceof HTMLInputElement) 
       const availableDates = Array.isArray(result?.participant?.availableDates)
         ? result.participant.availableDates
         : [];
-      const usesThreeState = result?.participant?.availabilityModel === "three-state";
-      applyAvailabilitySelection(unavailableDates, availableDates, usesThreeState);
+      const availabilityModel = String(result?.participant?.availabilityModel || "three-state");
+      applyAvailabilitySelection(unavailableDates, availableDates, availabilityModel);
       setUnavailabilitiesFeedback("Indisponibilités chargées.", false);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erreur inconnue.";
@@ -753,6 +785,7 @@ if (participantUnavailabilitiesForm) {
     }
 
     const { unavailableDates, availableDates } = collectSelectedAvailability();
+    const availabilityModel = resolveParticipantAvailabilityModelForSave();
     setUnavailabilitiesFeedback("Enregistrement en cours...", false);
 
     try {
@@ -760,7 +793,8 @@ if (participantUnavailabilitiesForm) {
         syncerId,
         selectedParticipantId,
         unavailableDates,
-        availableDates
+        availableDates,
+        availabilityModel
       );
       const resultsUrl = new URL("result.html", window.location.href);
       resultsUrl.searchParams.set("syncerId", syncerId);
