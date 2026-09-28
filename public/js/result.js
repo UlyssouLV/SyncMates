@@ -40,7 +40,7 @@ function setTextById(elementId, value) {
  * @throws {Error} Si la réponse HTTP est en erreur.
  */
 async function fetchSyncerResults(syncerId) {
-  const response = await fetch(`/api/syncers/${encodeURIComponent(syncerId)}/results`, {
+  const response = await fetch(apiUrl(`/api/syncers/${encodeURIComponent(syncerId)}/results`), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",

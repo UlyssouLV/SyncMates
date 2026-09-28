@@ -198,7 +198,7 @@ function cycleDateAvailabilityState(isoDate) {
  * @throws {Error} Si la réponse API est en erreur.
  */
 async function fetchSyncerParticipants(syncerId) {
-  const response = await fetch(`/api/syncers/${encodeURIComponent(syncerId)}/participants`, {
+  const response = await fetch(apiUrl(`/api/syncers/${encodeURIComponent(syncerId)}/participants`), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -579,9 +579,9 @@ function collectSelectedAvailability() {
  */
 async function fetchParticipantUnavailabilities(currentSyncerId, participantId) {
   const response = await fetch(
-    `/api/syncers/${encodeURIComponent(currentSyncerId)}/participants/${encodeURIComponent(
+    apiUrl(`/api/syncers/${encodeURIComponent(currentSyncerId)}/participants/${encodeURIComponent(
       participantId
-    )}/unavailabilities`,
+    )}/unavailabilities`),
     {
       method: "GET",
       headers: {
@@ -628,15 +628,15 @@ async function saveParticipantUnavailabilities(
   availabilityModel
 ) {
   const response = await fetch(
-    `/api/syncers/${encodeURIComponent(currentSyncerId)}/participants/${encodeURIComponent(
+    apiUrl(`/api/syncers/${encodeURIComponent(currentSyncerId)}/participants/${encodeURIComponent(
       participantId
-    )}/unavailabilities`,
+    )}/unavailabilities`),
     {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
+      body: stringifyApiBody({
         unavailableDates,
         availableDates,
         availabilityModel,

@@ -370,13 +370,13 @@ function renderExceptionDatesCalendar(eventStartDate, eventEndDate, exceptionDat
  */
 async function saveExceptionDates(currentSyncerId, exceptionDates) {
   const response = await fetch(
-    `/api/syncers/${encodeURIComponent(currentSyncerId)}/exception-dates`,
+    apiUrl(`/api/syncers/${encodeURIComponent(currentSyncerId)}/exception-dates`),
     {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
+      body: stringifyApiBody({
         exceptionDates,
       }),
     }
@@ -523,7 +523,7 @@ function renderParticipants(participants) {
  * @throws {Error} Si la réponse API est en erreur.
  */
 async function getSyncerDetails(currentSyncerId) {
-  const response = await fetch(`/api/syncers/${encodeURIComponent(currentSyncerId)}`, {
+  const response = await fetch(apiUrl(`/api/syncers/${encodeURIComponent(currentSyncerId)}`), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -560,12 +560,12 @@ async function getSyncerDetails(currentSyncerId) {
  * @throws {Error} Si la réponse API est en erreur.
  */
 async function addParticipant(currentSyncerId, participantName) {
-  const response = await fetch(`/api/syncers/${encodeURIComponent(currentSyncerId)}/participants`, {
+  const response = await fetch(apiUrl(`/api/syncers/${encodeURIComponent(currentSyncerId)}/participants`), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
+    body: stringifyApiBody({
       participantName,
     }),
   });
@@ -601,9 +601,9 @@ async function addParticipant(currentSyncerId, participantName) {
  */
 async function deleteParticipant(currentSyncerId, participantId) {
   const response = await fetch(
-    `/api/syncers/${encodeURIComponent(currentSyncerId)}/participants/${encodeURIComponent(
+    apiUrl(`/api/syncers/${encodeURIComponent(currentSyncerId)}/participants/${encodeURIComponent(
       participantId
-    )}`,
+    )}`),
     {
       method: "DELETE",
       headers: {
@@ -643,12 +643,12 @@ async function deleteParticipant(currentSyncerId, participantId) {
  * @throws {Error} Si la réponse API est en erreur.
  */
 async function configureEventPeriod(currentSyncerId, eventStartDate, eventEndDate) {
-  const response = await fetch(`/api/syncers/${encodeURIComponent(currentSyncerId)}/event-period`, {
+  const response = await fetch(apiUrl(`/api/syncers/${encodeURIComponent(currentSyncerId)}/event-period`), {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
+    body: stringifyApiBody({
       eventStartDate,
       eventEndDate,
     }),

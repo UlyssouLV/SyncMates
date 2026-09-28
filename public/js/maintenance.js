@@ -6,12 +6,12 @@
  * le delta minimal depuis le dernier run est dépassé.
  */
 (function triggerMaintenanceCleanup() {
-  fetch("/api/maintenance/cleanup-if-needed", {
+  fetch(apiUrl("/api/maintenance/cleanup-if-needed"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: "{}",
+    body: stringifyApiBody({}),
     cache: "no-store",
     keepalive: true,
   })

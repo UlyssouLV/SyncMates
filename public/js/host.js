@@ -39,12 +39,12 @@ function setFeedback(targetElement, message, isError) {
  * @throws {Error} Si la réponse HTTP n'est pas en succès.
  */
 async function postJson(endpoint, payload, actionLabel) {
-  const response = await fetch(endpoint, {
+  const response = await fetch(apiUrl(endpoint), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: stringifyApiBody(payload),
   });
 
   // Lit d'abord la réponse brute pour gérer proprement JSON et non-JSON.

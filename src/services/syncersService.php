@@ -29,7 +29,9 @@ require_once __DIR__ . '/../utils/id.php';
 function createSyncer(string $name, string $password): array
 {
     // Nettoie le nom pour éviter les espaces seuls.
-    $trimmedName = trim($name);
+    // L'apostrophe typographique envoyée par le navigateur redevient « ' ».
+    $trimmedName = normalizeApostrophes(trim($name));
+    $password = normalizeApostrophes($password);
     if ($trimmedName === '') {
         throw new InvalidArgumentException('Le nom du Syncer est requis.');
     }
@@ -94,7 +96,8 @@ function createSyncer(string $name, string $password): array
  */
 function loginSyncer(string $identifier, string $password): array
 {
-    $trimmedIdentifier = trim($identifier);
+    $trimmedIdentifier = normalizeApostrophes(trim($identifier));
+    $password = normalizeApostrophes($password);
     if ($trimmedIdentifier === '') {
         throw new InvalidArgumentException('Le nom ou identifiant du Syncer est requis.');
     }
@@ -126,7 +129,7 @@ function loginSyncer(string $identifier, string $password): array
 function addParticipantToSyncer(string $syncerId, string $participantName): array
 {
     $trimmedSyncerId = trim($syncerId);
-    $trimmedParticipantName = trim($participantName);
+    $trimmedParticipantName = normalizeApostrophes(trim($participantName));
 
     if ($trimmedSyncerId === '') {
         throw new InvalidArgumentException('L\'identifiant du Syncer est requis.');
@@ -554,6 +557,19 @@ function updateSyncerExceptionDates(string $syncerId, array $exceptionDates): ar
  *
  * @param string $date Date à valider.
  */
+/**
+ * Ramène les apostrophes typographiques vers l'apostrophe ASCII.
+ *
+ * Le navigateur remplace « ' » avant l'envoi pour éviter le 404 Apache
+ * déclenché par mod_security. Ici on retrouve le caractère saisi.
+ *
+ * @param string $value Texte saisi par l'utilisateur.
+ */
+function normalizeApostrophes(string $value): string
+{
+    return str_replace(["’", "‘", "ʼ", "´", "`"], "'", $value);
+}
+
 function isValidIsoDate(string $date): bool
 {
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {

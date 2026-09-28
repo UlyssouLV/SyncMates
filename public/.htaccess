@@ -1,9 +1,14 @@
 RewriteEngine On
 
-# Si le fichier ou dossier existe, Apache le sert directement.
+# Le front controller ne doit pas se réécrire lui-même.
+RewriteRule ^api/index\.php$ - [L]
+
+# /api/syncers n'est pas un fichier : tout passe par le front controller.
+# Cette règle est avant le test « dossier existant », sinon Apache peut
+# répondre 404 HTML parce que le dossier api/ existe.
+RewriteRule ^api(?:/.*)?$ api/index.php [QSA,L]
+
+# Fichiers et dossiers réels (HTML, CSS, JS).
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
-
-# Toutes les routes API passent par le front controller PHP.
-RewriteRule ^api/.*$ api/index.php [QSA,L]

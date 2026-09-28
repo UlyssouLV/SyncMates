@@ -19,7 +19,7 @@ header('Content-Type: application/json; charset=utf-8');
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 $path = parse_url($requestUri, PHP_URL_PATH) ?? '/';
-$normalizedPath = rtrim($path, '/');
+$normalizedPath = normalizeIncomingApiPath($path);
 
 $isCreateSyncerRoute = $normalizedPath === '/api/syncers';
 $isLoginSyncerRoute = $normalizedPath === '/api/syncers/login';
@@ -121,6 +121,32 @@ if ($isParticipantUnavailabilitiesRoute && $method === 'PATCH') {
     $participantId = isset($participantUnavailabilitiesMatches[2]) ? (string) $participantUnavailabilitiesMatches[2] : '';
     handleUpdateParticipantUnavailabilities($syncerId, $participantId);
     exit;
+}
+
+/**
+ * Ramène le chemin sur /api/... même si l'app n'est pas à la racine du domaine.
+ *
+ * Exemple: /syncmates/public/api/syncers devient /api/syncers.
+ *
+ * @param string $path Chemin brut de la requête.
+ */
+function normalizeIncomingApiPath(string $path): string
+{
+    $path = rtrim($path, '/');
+    if ($path === '') {
+        return '/';
+    }
+
+    $apiPosition = strrpos($path, '/api/');
+    if ($apiPosition !== false) {
+        return substr($path, $apiPosition);
+    }
+
+    if (str_ends_with($path, '/api')) {
+        return '/api';
+    }
+
+    return $path;
 }
 
 // Fallback pour toute route non implémentée.
